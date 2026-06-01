@@ -1,0 +1,240 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using RimWorld;
+using UnityEngine;
+using Verse;
+
+namespace TurretGroupControl
+{
+    public class TurretGroupManager : MapComponent
+    {
+        private Dictionary<int, TurretGroupData> groups = new Dictionary<int, TurretGroupData>();
+        private int nextGroupId = 1;
+        private static FieldInfo buildingTurretGunHoldFireField;
+        private static bool buildingTurretGunHoldFireFieldResolved;
+
+        public TurretGroupManager(Map map) : base(map)
+        {
+        }
+
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Values.Look(ref nextGroupId, "nextGroupId", 1);
+            Scribe_Collections.Look(ref groups, "groups", LookMode.Deep, LookMode.Value);
+
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                groups ??= new Dictionary<int, TurretGroupData>();
+                CleanupAllGroups();
+            }
+        }
+
+        public override void MapComponentTick()
+        {
+            if (Find.TickManager.TicksGame % 250 != 0)
+            {
+                return;
+            }
+
+            CleanupAllGroups();
+        }
+
+        public IEnumerable<TurretGroupData> AllGroups()
+        {
+            return groups.Values.OrderBy(g => g.id);
+        }
+
+        public TurretGroupData CreateGroup(IEnumerable<Thing> turrets)
+        {
+            var group = new TurretGroupData
+            {
+                id = nextGroupId++,
+                name = "Turret Group " + nextGroupId,
+                members = new List<Thing>(),
+                holdFire = false
+            };
+
+            if (turrets != null)
+            {
+                foreach (var turret in turrets)
+                {
+                    AddMember(group, turret);
+                }
+            }
+
+            groups[group.id] = group;
+            return group;
+        }
+
+        public TurretGroupData GetGroup(int id)
+        {
+            groups.TryGetValue(id, out var group);
+            return group;
+        }
+
+        public TurretGroupData FindGroupFor(Thing thing)
+        {
+            if (thing == null)
+            {
+                return null;
+            }
+
+            foreach (var group in groups.Values)
+            {
+                if (group.Contains(thing))
+                {
+                    return group;
+                }
+            }
+
+            return null;
+        }
+
+        public void AddMember(int groupId, Thing turret)
+        {
+            if (!groups.TryGetValue(groupId, out var group))
+            {
+                return;
+            }
+
+            AddMember(group, turret);
+        }
+
+        public void AddMember(TurretGroupData group, Thing turret)
+        {
+            if (group == null || turret == null || !IsSupportedTurret(turret))
+            {
+                return;
+            }
+
+            group.CleanupMembers();
+            if (!group.Contains(turret))
+            {
+                group.members.Add(turret);
+            }
+        }
+
+        public void RemoveMember(Thing turret)
+        {
+            if (turret == null)
+            {
+                return;
+            }
+
+            foreach (var group in groups.Values)
+            {
+                group.members?.RemoveAll(t => t == turret);
+            }
+        }
+
+        public void ToggleHoldFire(int groupId, bool holdFire)
+        {
+            if (!groups.TryGetValue(groupId, out var group))
+            {
+                return;
+            }
+
+            group.holdFire = holdFire;
+            ApplyHoldFire(group);
+        }
+
+        public void ApplyHoldFire(TurretGroupData group)
+        {
+            if (group == null)
+            {
+                return;
+            }
+
+            group.CleanupMembers();
+            foreach (var thing in group.members)
+            {
+                SetTurretHoldFire(thing, group.holdFire);
+            }
+        }
+
+        public void SelectGroup(TurretGroupData group)
+        {
+            if (group == null)
+            {
+                return;
+            }
+
+            group.CleanupMembers();
+            var selector = Find.Selector;
+            selector.ClearSelection();
+            foreach (var thing in group.members)
+            {
+                if (thing != null && thing.Spawned)
+                {
+                    selector.Select(thing);
+                }
+            }
+        }
+
+        public void CleanupAllGroups()
+        {
+            if (groups == null || groups.Count == 0)
+            {
+                return;
+            }
+
+            var emptyGroups = new List<int>();
+            foreach (var kvp in groups)
+            {
+                var group = kvp.Value;
+                group?.CleanupMembers();
+                if (group == null || group.members == null || group.members.Count == 0)
+                {
+                    emptyGroups.Add(kvp.Key);
+                }
+            }
+
+            for (int i = 0; i < emptyGroups.Count; i++)
+            {
+                groups.Remove(emptyGroups[i]);
+            }
+        }
+
+        public static bool IsSupportedTurret(Thing thing)
+        {
+            return thing is Building_Turret || thing is Building_TurretGun;
+        }
+
+        public static void SetTurretHoldFire(Thing thing, bool holdFire)
+        {
+            if (thing == null)
+            {
+                return;
+            }
+
+            if (thing is Building_TurretGun)
+            {
+                EnsureTurretGunHoldFireField();
+                if (buildingTurretGunHoldFireField != null)
+                {
+                    buildingTurretGunHoldFireField.SetValue(thing, holdFire);
+                }
+                return;
+            }
+
+            var field = thing.GetType().GetField("holdFire", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (field != null && field.FieldType == typeof(bool))
+            {
+                field.SetValue(thing, holdFire);
+            }
+        }
+
+        private static void EnsureTurretGunHoldFireField()
+        {
+            if (buildingTurretGunHoldFireFieldResolved)
+            {
+                return;
+            }
+
+            buildingTurretGunHoldFireFieldResolved = true;
+            buildingTurretGunHoldFireField = typeof(Building_TurretGun).GetField("holdFire", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+        }
+    }
+}
