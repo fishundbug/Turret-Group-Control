@@ -5,3 +5,4 @@ d:\Programming\RimworldMod\Turret Group Control\Assemblies\TurretGroupControl.dl
 d:\Programming\RimworldMod\Turret Group Control\Assemblies\TurretGroupControl.pdb
 d:\Programming\RimworldMod\Turret Group Control\Source\obj\Debug\TurretGroupControl.dll
 d:\Programming\RimworldMod\Turret Group Control\Source\obj\Debug\TurretGroupControl.pdb
+d:\Programming\RimworldMod\Turret Group Control\Source\obj\Debug\TurretGroupControl.sourcelink.json
