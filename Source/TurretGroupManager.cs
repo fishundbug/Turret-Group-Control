@@ -51,7 +51,7 @@ namespace TurretGroupControl
             var group = new TurretGroupData
             {
                 id = nextGroupId++,
-                name = "Turret Group " + nextGroupId,
+                name = "炮塔组 " + nextGroupId,
                 members = new List<Thing>(),
                 holdFire = false
             };

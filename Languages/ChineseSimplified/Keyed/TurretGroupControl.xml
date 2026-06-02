@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!-- 设置 -->
+  <TurretGroupControl_SettingsCategory>炮塔分组控制</TurretGroupControl_SettingsCategory>
+  <TurretGroupControl_ShowGroupLabels>显示炮塔组标签</TurretGroupControl_ShowGroupLabels>
+  <TurretGroupControl_ShowGroupLabelsDesc>在分组炮塔上方显示小文本标签。</TurretGroupControl_ShowGroupLabelsDesc>
+
+  <!-- 按钮 -->
+  <TurretGroupControl_CreateNewGroup>创建炮塔组</TurretGroupControl_CreateNewGroup>
+  <TurretGroupControl_CreateNewGroupDesc>从当前选中的炮塔创建新的炮塔组。</TurretGroupControl_CreateNewGroupDesc>
+
+  <TurretGroupControl_AddToGroup>加入 {0}</TurretGroupControl_AddToGroup>
+  <TurretGroupControl_AddToGroupDesc>将当前选中的炮塔加入此炮塔组。</TurretGroupControl_AddToGroupDesc>
+
+  <TurretGroupControl_SelectGroup>选择炮塔组</TurretGroupControl_SelectGroup>
+  <TurretGroupControl_SelectGroupDesc>选中 {0} 中所有已生成的炮塔。</TurretGroupControl_SelectGroupDesc>
+
+  <TurretGroupControl_RemoveFromGroup>从炮塔组移除</TurretGroupControl_RemoveFromGroup>
+  <TurretGroupControl_RemoveFromGroupDesc>将此炮塔从 {0} 中移除。</TurretGroupControl_RemoveFromGroupDesc>
+
+  <TurretGroupControl_GroupHoldFire>组内停火</TurretGroupControl_GroupHoldFire>
+  <TurretGroupControl_GroupHoldFireDesc>将 {0} 中的所有炮塔设为停火状态。</TurretGroupControl_GroupHoldFireDesc>
+
+  <TurretGroupControl_GroupFireAtWill>组内自由开火</TurretGroupControl_GroupFireAtWill>
+  <TurretGroupControl_GroupFireAtWillDesc>允许 {0} 中的所有炮塔自由开火。</TurretGroupControl_GroupFireAtWillDesc>
+
+  <!-- 消息 -->
+  <TurretGroupControl_CreatedGroup>已创建 {0}，包含 {1} 座炮塔。</TurretGroupControl_CreatedGroup>
+  <TurretGroupControl_AddedToGroup>已将炮塔加入 {0}。</TurretGroupControl_AddedToGroup>
+  <TurretGroupControl_RemovedFromGroup>已将炮塔从 {0} 中移除。</TurretGroupControl_RemovedFromGroup>
+  <TurretGroupControl_GroupHoldFireSet>{0}：停火。</TurretGroupControl_GroupHoldFireSet>
+  <TurretGroupControl_GroupFireAtWillSet>{0}：自由开火。</TurretGroupControl_GroupFireAtWillSet>
+</LanguageData>

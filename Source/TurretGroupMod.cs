@@ -18,7 +18,7 @@ namespace TurretGroupControl
 
         public override string SettingsCategory()
         {
-            return "Turret Group Control";
+            return "TurretGroupControl_SettingsCategory".Translate();
         }
 
         public override void DoSettingsWindowContents(Rect inRect)
@@ -26,9 +26,9 @@ namespace TurretGroupControl
             var listing = new Listing_Standard();
             listing.Begin(inRect);
             listing.CheckboxLabeled(
-                "Show turret group labels",
+                "TurretGroupControl_ShowGroupLabels".Translate(),
                 ref Settings.showGroupLabels,
-                "Show a small text label above grouped turrets."
+                "TurretGroupControl_ShowGroupLabelsDesc".Translate()
             );
             listing.End();
         }

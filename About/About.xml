@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-  <name>Turret Group Control</name>
+  <name>炮塔分组控制</name>
   <author>fishundbug</author>
   <packageId>fishundbug.TurretGroupControl</packageId>
   <supportedVersions>
@@ -16,5 +16,5 @@
   <loadAfter>
     <li>brrainz.harmony</li>
   </loadAfter>
-  <description>Adds practical turret grouping controls. Create turret groups from selected player turrets, select the whole group, and toggle hold fire for the group.</description>
+  <description>为玩家炮塔添加实用的分组控制功能。手动创建炮塔组、选择整组炮塔、批量切换组内停火状态。</description>
 </ModMetaData>

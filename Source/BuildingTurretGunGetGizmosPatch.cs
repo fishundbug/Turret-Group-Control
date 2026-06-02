@@ -57,13 +57,13 @@ namespace TurretGroupControl
         {
             return new Command_Action
             {
-                defaultLabel = selectedTurrets.Count > 1 ? "Create turret group" : "Create turret group",
-                defaultDesc = "Create a new turret group from the currently selected turrets.",
+                defaultLabel = "TurretGroupControl_CreateNewGroup".Translate(),
+                defaultDesc = "TurretGroupControl_CreateNewGroupDesc".Translate(),
                 icon = ContentFinder<Texture2D>.Get("UI/Commands/FormCaravan", false),
                 action = delegate
                 {
                     var group = manager.CreateGroup(selectedTurrets);
-                    Messages.Message($"Created {group.name} with {group.members.Count} turret(s).", MessageTypeDefOf.TaskCompletion, false);
+                    Messages.Message("TurretGroupControl_CreatedGroup".Translate(group.name, group.members.Count), MessageTypeDefOf.TaskCompletion, false);
                 }
             };
         }
@@ -72,8 +72,8 @@ namespace TurretGroupControl
         {
             return new Command_Action
             {
-                defaultLabel = "Add to " + group.name,
-                defaultDesc = "Add the currently selected turrets to this turret group.",
+                defaultLabel = "TurretGroupControl_AddToGroup".Translate(group.name),
+                defaultDesc = "TurretGroupControl_AddToGroupDesc".Translate(),
                 icon = ContentFinder<Texture2D>.Get("UI/Commands/Install", false),
                 action = delegate
                 {
@@ -81,7 +81,7 @@ namespace TurretGroupControl
                     {
                         manager.AddMember(group, selectedTurrets[i]);
                     }
-                    Messages.Message($"Added turret(s) to {group.name}.", MessageTypeDefOf.TaskCompletion, false);
+                    Messages.Message("TurretGroupControl_AddedToGroup".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
                 }
             };
         }
@@ -90,8 +90,8 @@ namespace TurretGroupControl
         {
             return new Command_Action
             {
-                defaultLabel = "Select turret group",
-                defaultDesc = $"Select every spawned turret in {group.name}.",
+                defaultLabel = "TurretGroupControl_SelectGroup".Translate(),
+                defaultDesc = "TurretGroupControl_SelectGroupDesc".Translate(group.name),
                 icon = ContentFinder<Texture2D>.Get("UI/Commands/SelectAll", false),
                 action = delegate
                 {
@@ -104,13 +104,13 @@ namespace TurretGroupControl
         {
             return new Command_Action
             {
-                defaultLabel = "Remove from turret group",
-                defaultDesc = $"Remove this turret from {group.name}.",
+                defaultLabel = "TurretGroupControl_RemoveFromGroup".Translate(),
+                defaultDesc = "TurretGroupControl_RemoveFromGroupDesc".Translate(group.name),
                 icon = ContentFinder<Texture2D>.Get("UI/Commands/Cancel", false),
                 action = delegate
                 {
                     manager.RemoveMember(turret);
-                    Messages.Message($"Removed turret from {group.name}.", MessageTypeDefOf.TaskCompletion, false);
+                    Messages.Message("TurretGroupControl_RemovedFromGroup".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
                 }
             };
         }
@@ -119,13 +119,13 @@ namespace TurretGroupControl
         {
             return new Command_Action
             {
-                defaultLabel = holdFire ? "Group hold fire" : "Group fire at will",
-                defaultDesc = holdFire ? $"Set every turret in {group.name} to hold fire." : $"Allow every turret in {group.name} to fire at will.",
+                defaultLabel = holdFire ? "TurretGroupControl_GroupHoldFire".Translate() : "TurretGroupControl_GroupFireAtWill".Translate(),
+                defaultDesc = holdFire ? "TurretGroupControl_GroupHoldFireDesc".Translate(group.name) : "TurretGroupControl_GroupFireAtWillDesc".Translate(group.name),
                 icon = ContentFinder<Texture2D>.Get(holdFire ? "UI/Commands/HoldFire" : "UI/Commands/Attack", false),
                 action = delegate
                 {
                     manager.ToggleHoldFire(group.id, holdFire);
-                    Messages.Message($"{group.name}: " + (holdFire ? "hold fire." : "fire at will."), MessageTypeDefOf.TaskCompletion, false);
+                    Messages.Message(holdFire ? "TurretGroupControl_GroupHoldFireSet".Translate(group.name) : "TurretGroupControl_GroupFireAtWillSet".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
                 }
             };
         }
