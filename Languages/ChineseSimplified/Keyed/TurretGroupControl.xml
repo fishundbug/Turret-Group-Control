@@ -4,8 +4,13 @@
   <TurretGroupControl_SettingsCategory>炮塔分组控制</TurretGroupControl_SettingsCategory>
   <TurretGroupControl_ShowGroupLabels>显示炮塔组标签</TurretGroupControl_ShowGroupLabels>
   <TurretGroupControl_ShowGroupLabelsDesc>在分组炮塔上方显示小文本标签。</TurretGroupControl_ShowGroupLabelsDesc>
+  <TurretGroupControl_AutoRemoveEmptyGroups>自动删除空炮塔组</TurretGroupControl_AutoRemoveEmptyGroups>
+  <TurretGroupControl_AutoRemoveEmptyGroupsDesc>开启后会定期删除没有成员的炮塔组；关闭时空组会保留，方便先建组再移入炮塔。默认关闭。</TurretGroupControl_AutoRemoveEmptyGroupsDesc>
 
   <!-- 按钮 -->
+  <TurretGroupControl_OpenManagementWindow>炮塔组管理</TurretGroupControl_OpenManagementWindow>
+  <TurretGroupControl_OpenManagementWindowDesc>打开炮塔组管理界面，可新建、重命名、删除炮塔组，并手动移入或移出炮塔。</TurretGroupControl_OpenManagementWindowDesc>
+
   <TurretGroupControl_CreateNewGroup>创建炮塔组</TurretGroupControl_CreateNewGroup>
   <TurretGroupControl_CreateNewGroupDesc>从当前选中的炮塔创建新的炮塔组。</TurretGroupControl_CreateNewGroupDesc>
 
@@ -24,10 +29,39 @@
   <TurretGroupControl_GroupFireAtWill>组内自由开火</TurretGroupControl_GroupFireAtWill>
   <TurretGroupControl_GroupFireAtWillDesc>允许 {0} 中的所有炮塔自由开火。</TurretGroupControl_GroupFireAtWillDesc>
 
+  <!-- 管理窗口 -->
+  <TurretGroupControl_ManagementTitle>炮塔组管理</TurretGroupControl_ManagementTitle>
+  <TurretGroupControl_GroupList>炮塔组列表</TurretGroupControl_GroupList>
+  <TurretGroupControl_GroupDetails>炮塔组详情</TurretGroupControl_GroupDetails>
+  <TurretGroupControl_Members>组内炮塔</TurretGroupControl_Members>
+  <TurretGroupControl_AvailableTurrets>可加入炮塔</TurretGroupControl_AvailableTurrets>
+  <TurretGroupControl_NewEmptyGroup>新建空炮塔组</TurretGroupControl_NewEmptyGroup>
+  <TurretGroupControl_RenameGroup>重命名</TurretGroupControl_RenameGroup>
+  <TurretGroupControl_DeleteGroup>删除组</TurretGroupControl_DeleteGroup>
+  <TurretGroupControl_ConfirmDeleteGroup>确定要删除“{0}”吗？这只会删除分组关系，不会摧毁炮塔。</TurretGroupControl_ConfirmDeleteGroup>
+  <TurretGroupControl_AddTurret>加入</TurretGroupControl_AddTurret>
+  <TurretGroupControl_RemoveTurret>移出</TurretGroupControl_RemoveTurret>
+  <TurretGroupControl_MoveToGroup>移入</TurretGroupControl_MoveToGroup>
+  <TurretGroupControl_NoGroupSelected>请选择或新建一个炮塔组。</TurretGroupControl_NoGroupSelected>
+  <TurretGroupControl_NoGroups>当前地图还没有炮塔组。</TurretGroupControl_NoGroups>
+  <TurretGroupControl_NoMembers>此炮塔组暂无成员。</TurretGroupControl_NoMembers>
+  <TurretGroupControl_NoAvailableTurrets>当前地图没有可加入的玩家炮塔。</TurretGroupControl_NoAvailableTurrets>
+  <TurretGroupControl_NoManager>当前地图没有可用的炮塔组管理器。</TurretGroupControl_NoManager>
+  <TurretGroupControl_GroupSummary>{0}（{1} 座，{2}）</TurretGroupControl_GroupSummary>
+  <TurretGroupControl_HoldFireState>停火</TurretGroupControl_HoldFireState>
+  <TurretGroupControl_FireAtWillState>自由开火</TurretGroupControl_FireAtWillState>
+  <TurretGroupControl_TurretLabel>{0} - {1}</TurretGroupControl_TurretLabel>
+  <TurretGroupControl_TurretInOtherGroup>{0}（当前在 {1}）</TurretGroupControl_TurretInOtherGroup>
+  <TurretGroupControl_DefaultGroupName>炮塔组 {0}</TurretGroupControl_DefaultGroupName>
+
   <!-- 消息 -->
   <TurretGroupControl_CreatedGroup>已创建 {0}，包含 {1} 座炮塔。</TurretGroupControl_CreatedGroup>
   <TurretGroupControl_AddedToGroup>已将炮塔加入 {0}。</TurretGroupControl_AddedToGroup>
   <TurretGroupControl_RemovedFromGroup>已将炮塔从 {0} 中移除。</TurretGroupControl_RemovedFromGroup>
   <TurretGroupControl_GroupHoldFireSet>{0}：停火。</TurretGroupControl_GroupHoldFireSet>
   <TurretGroupControl_GroupFireAtWillSet>{0}：自由开火。</TurretGroupControl_GroupFireAtWillSet>
+  <TurretGroupControl_RenamedGroup>已重命名为 {0}。</TurretGroupControl_RenamedGroup>
+  <TurretGroupControl_DeletedGroup>已删除 {0}。</TurretGroupControl_DeletedGroup>
+  <TurretGroupControl_AddedTurretToGroup>已将炮塔加入 {0}。</TurretGroupControl_AddedTurretToGroup>
+  <TurretGroupControl_RemovedTurretFromGroup>已将炮塔从 {0} 中移出。</TurretGroupControl_RemovedTurretFromGroup>
 </LanguageData>

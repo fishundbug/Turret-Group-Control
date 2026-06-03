@@ -35,6 +35,7 @@ namespace TurretGroupControl
                 selectedTurrets.Add(__instance);
             }
 
+            yield return OpenManagementWindowCommand(__instance.Map);
             yield return CreateNewGroupCommand(manager, selectedTurrets);
 
             if (group != null)
@@ -51,6 +52,20 @@ namespace TurretGroupControl
                     yield return AddToExistingGroupCommand(manager, existing, selectedTurrets);
                 }
             }
+        }
+
+        private static Command_Action OpenManagementWindowCommand(Map map)
+        {
+            return new Command_Action
+            {
+                defaultLabel = "TurretGroupControl_OpenManagementWindow".Translate(),
+                defaultDesc = "TurretGroupControl_OpenManagementWindowDesc".Translate(),
+                icon = ContentFinder<Texture2D>.Get("UI/Commands/OpenDebugActionsMenu", false),
+                action = delegate
+                {
+                    Find.WindowStack.Add(new TurretGroupManagementWindow(map));
+                }
+            };
         }
 
         private static Command_Action CreateNewGroupCommand(TurretGroupManager manager, List<Thing> selectedTurrets)

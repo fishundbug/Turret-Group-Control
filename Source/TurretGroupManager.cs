@@ -48,13 +48,16 @@ namespace TurretGroupControl
 
         public TurretGroupData CreateGroup(IEnumerable<Thing> turrets)
         {
+            int id = nextGroupId++;
             var group = new TurretGroupData
             {
-                id = nextGroupId++,
-                name = "炮塔组 " + nextGroupId,
+                id = id,
+                name = "TurretGroupControl_DefaultGroupName".Translate(id).ToString(),
                 members = new List<Thing>(),
                 holdFire = false
             };
+
+            groups[group.id] = group;
 
             if (turrets != null)
             {
@@ -64,8 +67,12 @@ namespace TurretGroupControl
                 }
             }
 
-            groups[group.id] = group;
             return group;
+        }
+
+        public TurretGroupData CreateEmptyGroup()
+        {
+            return CreateGroup(null);
         }
 
         public TurretGroupData GetGroup(int id)
@@ -109,11 +116,10 @@ namespace TurretGroupControl
                 return;
             }
 
+            RemoveMember(turret);
             group.CleanupMembers();
-            if (!group.Contains(turret))
-            {
-                group.members.Add(turret);
-            }
+            group.members.Add(turret);
+            ApplyHoldFireToTurret(turret, group.holdFire);
         }
 
         public void RemoveMember(Thing turret)
@@ -127,6 +133,43 @@ namespace TurretGroupControl
             {
                 group.members?.RemoveAll(t => t == turret);
             }
+        }
+
+        public void RemoveMember(int groupId, Thing turret)
+        {
+            if (turret == null || !groups.TryGetValue(groupId, out var group))
+            {
+                return;
+            }
+
+            group.members?.RemoveAll(t => t == turret);
+        }
+
+        public bool RenameGroup(int groupId, string newName)
+        {
+            if (!groups.TryGetValue(groupId, out var group))
+            {
+                return false;
+            }
+
+            newName = (newName ?? string.Empty).Trim();
+            if (newName.NullOrEmpty())
+            {
+                newName = "TurretGroupControl_DefaultGroupName".Translate(group.id).ToString();
+            }
+
+            group.name = newName;
+            return true;
+        }
+
+        public bool DeleteGroup(int groupId)
+        {
+            return groups.Remove(groupId);
+        }
+
+        public void MoveMember(Thing turret, int targetGroupId)
+        {
+            AddMember(targetGroupId, turret);
         }
 
         public void ToggleHoldFire(int groupId, bool holdFire)
@@ -150,7 +193,7 @@ namespace TurretGroupControl
             group.CleanupMembers();
             foreach (var thing in group.members)
             {
-                SetTurretHoldFire(thing, group.holdFire);
+                ApplyHoldFireToTurret(thing, group.holdFire);
             }
         }
 
@@ -175,7 +218,9 @@ namespace TurretGroupControl
 
         public void CleanupAllGroups()
         {
-            if (groups == null || groups.Count == 0)
+            CleanupInvalidMembers();
+
+            if (TurretGroupMod.Settings?.autoRemoveEmptyGroups != true || groups == null || groups.Count == 0)
             {
                 return;
             }
@@ -184,7 +229,6 @@ namespace TurretGroupControl
             foreach (var kvp in groups)
             {
                 var group = kvp.Value;
-                group?.CleanupMembers();
                 if (group == null || group.members == null || group.members.Count == 0)
                 {
                     emptyGroups.Add(kvp.Key);
@@ -194,6 +238,19 @@ namespace TurretGroupControl
             for (int i = 0; i < emptyGroups.Count; i++)
             {
                 groups.Remove(emptyGroups[i]);
+            }
+        }
+
+        public void CleanupInvalidMembers()
+        {
+            if (groups == null || groups.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var group in groups.Values)
+            {
+                group?.CleanupMembers();
             }
         }
 
@@ -224,6 +281,11 @@ namespace TurretGroupControl
             {
                 field.SetValue(thing, holdFire);
             }
+        }
+
+        private static void ApplyHoldFireToTurret(Thing thing, bool holdFire)
+        {
+            SetTurretHoldFire(thing, holdFire);
         }
 
         private static void EnsureTurretGunHoldFireField()

@@ -30,6 +30,12 @@ namespace TurretGroupControl
                 ref Settings.showGroupLabels,
                 "TurretGroupControl_ShowGroupLabelsDesc".Translate()
             );
+            listing.Gap();
+            listing.CheckboxLabeled(
+                "TurretGroupControl_AutoRemoveEmptyGroups".Translate(),
+                ref Settings.autoRemoveEmptyGroups,
+                "TurretGroupControl_AutoRemoveEmptyGroupsDesc".Translate()
+            );
             listing.End();
         }
 
