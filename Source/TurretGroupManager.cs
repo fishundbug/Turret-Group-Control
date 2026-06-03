@@ -49,10 +49,11 @@ namespace TurretGroupControl
         public TurretGroupData CreateGroup(IEnumerable<Thing> turrets)
         {
             int id = nextGroupId++;
+            int defaultNameNumber = NextUnusedDefaultGroupNumber();
             var group = new TurretGroupData
             {
                 id = id,
-                name = "TurretGroupControl_DefaultGroupName".Translate(id).ToString(),
+                name = DefaultGroupName(defaultNameNumber),
                 members = new List<Thing>(),
                 holdFire = false
             };
@@ -252,6 +253,22 @@ namespace TurretGroupControl
             {
                 group?.CleanupMembers();
             }
+        }
+
+        private int NextUnusedDefaultGroupNumber()
+        {
+            int number = 1;
+            while (groups != null && groups.Values.Any(group => group != null && group.name == DefaultGroupName(number)))
+            {
+                number++;
+            }
+
+            return number;
+        }
+
+        private static string DefaultGroupName(int number)
+        {
+            return "TurretGroupControl_DefaultGroupName".Translate(number).ToString();
         }
 
         public static bool IsSupportedTurret(Thing thing)

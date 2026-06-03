@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using UnityEngine;
@@ -7,50 +9,86 @@ using Verse;
 
 namespace TurretGroupControl
 {
-    [HarmonyPatch(typeof(Building_TurretGun), nameof(Building_TurretGun.GetGizmos))]
+    [HarmonyPatch]
     public static class BuildingTurretGunGetGizmosPatch
     {
-        public static IEnumerable<Gizmo> Postfix(IEnumerable<Gizmo> values, Building_TurretGun __instance)
+        private static readonly Texture2D ManageIcon = TexButton.ToggleLog;
+        private static readonly Texture2D CreateGroupIcon = TexButton.Plus;
+        private static readonly Texture2D AddToGroupIcon = TexCommand.DesirePower;
+        private static readonly Texture2D SelectGroupIcon = TexCommand.Attack;
+        private static readonly Texture2D RemoveFromGroupIcon = TexButton.Delete;
+
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            foreach (var type in AccessTools.AllTypes())
+            {
+                if (type == null || type.IsAbstract || !typeof(Building_Turret).IsAssignableFrom(type))
+                {
+                    continue;
+                }
+
+                var method = AccessTools.DeclaredMethod(type, nameof(Thing.GetGizmos));
+                if (method != null && method.GetParameters().Length == 0 && typeof(IEnumerable<Gizmo>).IsAssignableFrom(method.ReturnType))
+                {
+                    yield return method;
+                }
+            }
+        }
+
+        public static IEnumerable<Gizmo> Postfix(IEnumerable<Gizmo> values, Thing __instance)
+        {
+            var existingGizmos = values?.ToList() ?? new List<Gizmo>();
+            if (existingGizmos.OfType<Command>().Any(command => command.defaultLabel == "TurretGroupControl_OpenManagementWindow".Translate().ToString()))
+            {
+                return existingGizmos;
+            }
+
+            return AppendTurretGroupGizmos(existingGizmos, __instance);
+        }
+
+        private static IEnumerable<Gizmo> AppendTurretGroupGizmos(List<Gizmo> values, Thing turret)
         {
             foreach (var gizmo in values)
             {
                 yield return gizmo;
             }
 
-            if (__instance == null || !__instance.Spawned || __instance.Faction != Faction.OfPlayer)
+            if (turret == null || !turret.Spawned || turret.Faction != Faction.OfPlayer || !TurretGroupManager.IsSupportedTurret(turret))
             {
                 yield break;
             }
 
-            var manager = TurretGroupUtility.GetManager(__instance.Map);
+            var manager = TurretGroupUtility.GetManager(turret.Map);
             if (manager == null)
             {
                 yield break;
             }
 
-            var group = manager.FindGroupFor(__instance);
+            var group = manager.FindGroupFor(turret);
             var selectedTurrets = TurretGroupUtility.GetSelectedSupportedTurrets().ToList();
             if (selectedTurrets.Count == 0)
             {
-                selectedTurrets.Add(__instance);
+                selectedTurrets.Add(turret);
             }
 
-            yield return OpenManagementWindowCommand(__instance.Map);
-            yield return CreateNewGroupCommand(manager, selectedTurrets);
+            yield return OpenManagementWindowCommand(turret.Map);
+
+            bool anySelectedTurretAlreadyGrouped = selectedTurrets.Any(selected => manager.FindGroupFor(selected) != null);
+            if (!anySelectedTurretAlreadyGrouped)
+            {
+                yield return CreateNewGroupCommand(manager, selectedTurrets);
+            }
 
             if (group != null)
             {
                 yield return SelectGroupCommand(manager, group);
-                yield return RemoveFromGroupCommand(manager, __instance, group);
+                yield return RemoveFromGroupCommand(manager, turret, group);
                 yield return SetGroupHoldFireCommand(manager, group, true);
                 yield return SetGroupHoldFireCommand(manager, group, false);
             }
-            else
+            else if (manager.AllGroups().Any())
             {
-                foreach (var existing in manager.AllGroups())
-                {
-                    yield return AddToExistingGroupCommand(manager, existing, selectedTurrets);
-                }
+                yield return AddToExistingGroupMenuCommand(manager, selectedTurrets);
             }
         }
 
@@ -60,7 +98,7 @@ namespace TurretGroupControl
             {
                 defaultLabel = "TurretGroupControl_OpenManagementWindow".Translate(),
                 defaultDesc = "TurretGroupControl_OpenManagementWindowDesc".Translate(),
-                icon = ContentFinder<Texture2D>.Get("UI/Commands/OpenDebugActionsMenu", false),
+                icon = ManageIcon,
                 action = delegate
                 {
                     Find.WindowStack.Add(new TurretGroupManagementWindow(map));
@@ -74,7 +112,7 @@ namespace TurretGroupControl
             {
                 defaultLabel = "TurretGroupControl_CreateNewGroup".Translate(),
                 defaultDesc = "TurretGroupControl_CreateNewGroupDesc".Translate(),
-                icon = ContentFinder<Texture2D>.Get("UI/Commands/FormCaravan", false),
+                icon = CreateGroupIcon,
                 action = delegate
                 {
                     var group = manager.CreateGroup(selectedTurrets);
@@ -83,20 +121,34 @@ namespace TurretGroupControl
             };
         }
 
-        private static Command_Action AddToExistingGroupCommand(TurretGroupManager manager, TurretGroupData group, List<Thing> selectedTurrets)
+        private static Command_Action AddToExistingGroupMenuCommand(TurretGroupManager manager, List<Thing> selectedTurrets)
         {
             return new Command_Action
             {
-                defaultLabel = "TurretGroupControl_AddToGroup".Translate(group.name),
-                defaultDesc = "TurretGroupControl_AddToGroupDesc".Translate(),
-                icon = ContentFinder<Texture2D>.Get("UI/Commands/Install", false),
+                defaultLabel = "TurretGroupControl_AddToGroupMenu".Translate(),
+                defaultDesc = "TurretGroupControl_AddToGroupMenuDesc".Translate(),
+                icon = AddToGroupIcon,
                 action = delegate
                 {
-                    for (int i = 0; i < selectedTurrets.Count; i++)
+                    var options = new List<FloatMenuOption>();
+                    foreach (var group in manager.AllGroups())
                     {
-                        manager.AddMember(group, selectedTurrets[i]);
+                        var localGroup = group;
+                        options.Add(new FloatMenuOption(localGroup.name, delegate
+                        {
+                            for (int i = 0; i < selectedTurrets.Count; i++)
+                            {
+                                manager.AddMember(localGroup, selectedTurrets[i]);
+                            }
+                            Messages.Message("TurretGroupControl_AddedToGroup".Translate(localGroup.name), MessageTypeDefOf.TaskCompletion, false);
+                        }));
                     }
-                    Messages.Message("TurretGroupControl_AddedToGroup".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
+
+                    if (options.Count == 0)
+                    {
+                        options.Add(new FloatMenuOption("TurretGroupControl_NoGroups".Translate(), null));
+                    }
+                    Find.WindowStack.Add(new FloatMenu(options));
                 }
             };
         }
@@ -107,7 +159,7 @@ namespace TurretGroupControl
             {
                 defaultLabel = "TurretGroupControl_SelectGroup".Translate(),
                 defaultDesc = "TurretGroupControl_SelectGroupDesc".Translate(group.name),
-                icon = ContentFinder<Texture2D>.Get("UI/Commands/SelectAll", false),
+                icon = SelectGroupIcon,
                 action = delegate
                 {
                     manager.SelectGroup(group);
@@ -121,7 +173,7 @@ namespace TurretGroupControl
             {
                 defaultLabel = "TurretGroupControl_RemoveFromGroup".Translate(),
                 defaultDesc = "TurretGroupControl_RemoveFromGroupDesc".Translate(group.name),
-                icon = ContentFinder<Texture2D>.Get("UI/Commands/Cancel", false),
+                icon = RemoveFromGroupIcon,
                 action = delegate
                 {
                     manager.RemoveMember(turret);
@@ -136,7 +188,7 @@ namespace TurretGroupControl
             {
                 defaultLabel = holdFire ? "TurretGroupControl_GroupHoldFire".Translate() : "TurretGroupControl_GroupFireAtWill".Translate(),
                 defaultDesc = holdFire ? "TurretGroupControl_GroupHoldFireDesc".Translate(group.name) : "TurretGroupControl_GroupFireAtWillDesc".Translate(group.name),
-                icon = ContentFinder<Texture2D>.Get(holdFire ? "UI/Commands/HoldFire" : "UI/Commands/Attack", false),
+                icon = holdFire ? TexCommand.DesirePower : TexCommand.Attack,
                 action = delegate
                 {
                     manager.ToggleHoldFire(group.id, holdFire);

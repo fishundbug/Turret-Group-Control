@@ -16,6 +16,8 @@
 
   <TurretGroupControl_AddToGroup>加入 {0}</TurretGroupControl_AddToGroup>
   <TurretGroupControl_AddToGroupDesc>将当前选中的炮塔加入此炮塔组。</TurretGroupControl_AddToGroupDesc>
+  <TurretGroupControl_AddToGroupMenu>加入炮塔组</TurretGroupControl_AddToGroupMenu>
+  <TurretGroupControl_AddToGroupMenuDesc>选择一个炮塔组，并将当前选中的炮塔加入该组。</TurretGroupControl_AddToGroupMenuDesc>
 
   <TurretGroupControl_SelectGroup>选择炮塔组</TurretGroupControl_SelectGroup>
   <TurretGroupControl_SelectGroupDesc>选中 {0} 中所有已生成的炮塔。</TurretGroupControl_SelectGroupDesc>
@@ -52,6 +54,7 @@
   <TurretGroupControl_FireAtWillState>自由开火</TurretGroupControl_FireAtWillState>
   <TurretGroupControl_TurretLabel>{0} - {1}</TurretGroupControl_TurretLabel>
   <TurretGroupControl_TurretInOtherGroup>{0}（当前在 {1}）</TurretGroupControl_TurretInOtherGroup>
+  <TurretGroupControl_CurrentGroupInspect>所属炮塔组：{0}</TurretGroupControl_CurrentGroupInspect>
   <TurretGroupControl_DefaultGroupName>炮塔组 {0}</TurretGroupControl_DefaultGroupName>
 
   <!-- 消息 -->
