@@ -9,13 +9,14 @@ namespace TurretGroupControl
 {
     public class TurretGroupManagementWindow : Window
     {
-        private const float WindowWidth = 860f;
-        private const float WindowHeight = 620f;
-        private const float LeftPanelWidth = 260f;
+        private const float WindowWidth = 980f;
+        private const float WindowHeight = 740f;
+        private const float LeftPanelWidth = 300f;
         private const float Gap = 10f;
         private const float RowHeight = 32f;
         private const float ButtonWidth = 110f;
         private const float SmallButtonWidth = 80f;
+        private const float DoubleClickInterval = 0.45f;
 
         private readonly Map map;
         private readonly TurretGroupManager manager;
@@ -24,6 +25,8 @@ namespace TurretGroupControl
         private string renameBuffer = string.Empty;
         private string memberSearchBuffer = string.Empty;
         private string availableSearchBuffer = string.Empty;
+        private Thing lastClickedTurret;
+        private float lastTurretClickTime = -1f;
         private Vector2 groupScrollPosition;
         private Vector2 memberScrollPosition;
         private Vector2 availableScrollPosition;
@@ -34,8 +37,10 @@ namespace TurretGroupControl
         {
             this.map = map;
             manager = TurretGroupUtility.GetManager(map);
+            layer = WindowLayer.GameUI;
             doCloseX = true;
-            absorbInputAroundWindow = true;
+            absorbInputAroundWindow = false;
+            preventCameraMotion = false;
             forcePause = false;
         }
 
@@ -234,10 +239,7 @@ namespace TurretGroupControl
             var buttonRect = new Rect(rect.xMax - SmallButtonWidth, rect.y, SmallButtonWidth, rect.height);
             var labelRect = new Rect(rect.x + 4f, rect.y + 4f, buttonRect.x - rect.x - 8f, rect.height - 8f);
             Widgets.Label(labelRect, TurretLabel(turret));
-            if (Widgets.ButtonInvisible(labelRect) && Event.current.clickCount >= 2)
-            {
-                SelectAndJumpToTurret(turret);
-            }
+            HandleTurretRowClick(labelRect, turret);
             if (Widgets.ButtonText(buttonRect, "TurretGroupControl_RemoveTurret".Translate()))
             {
                 manager.RemoveMember(group.id, turret);
@@ -282,10 +284,7 @@ namespace TurretGroupControl
             var labelRect = new Rect(rect.x + 4f, rect.y + 4f, buttonRect.x - rect.x - 8f, rect.height - 8f);
             string label = currentGroup == null ? TurretLabel(turret) : "TurretGroupControl_TurretInOtherGroup".Translate(TurretLabel(turret), currentGroup.name).ToString();
             Widgets.Label(labelRect, label);
-            if (Widgets.ButtonInvisible(labelRect) && Event.current.clickCount >= 2)
-            {
-                SelectAndJumpToTurret(turret);
-            }
+            HandleTurretRowClick(labelRect, turret);
 
             string buttonLabel = currentGroup == null ? "TurretGroupControl_AddTurret".Translate() : "TurretGroupControl_MoveToGroup".Translate();
             if (Widgets.ButtonText(buttonRect, buttonLabel))
@@ -378,6 +377,24 @@ namespace TurretGroupControl
             }
 
             return turrets.Where(turret => TurretLabel(turret).IndexOf(normalizedSearch, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private void HandleTurretRowClick(Rect rect, Thing turret)
+        {
+            if (Widgets.ButtonInvisible(rect))
+            {
+                float now = Time.realtimeSinceStartup;
+                if (lastClickedTurret == turret && now - lastTurretClickTime <= DoubleClickInterval)
+                {
+                    lastClickedTurret = null;
+                    lastTurretClickTime = -1f;
+                    SelectAndJumpToTurret(turret);
+                    return;
+                }
+
+                lastClickedTurret = turret;
+                lastTurretClickTime = now;
+            }
         }
 
         private static void SelectAndJumpToTurret(Thing turret)
