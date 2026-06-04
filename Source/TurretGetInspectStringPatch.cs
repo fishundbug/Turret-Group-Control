@@ -7,7 +7,6 @@ using Verse;
 
 namespace TurretGroupControl
 {
-    [HarmonyPatch]
     public static class TurretGetInspectStringPatch
     {
         public static IEnumerable<MethodBase> TargetMethods()

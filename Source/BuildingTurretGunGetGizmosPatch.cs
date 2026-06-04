@@ -9,7 +9,6 @@ using Verse;
 
 namespace TurretGroupControl
 {
-    [HarmonyPatch]
     public static class BuildingTurretGunGetGizmosPatch
     {
         private static readonly Texture2D ManageIcon = TexButton.ToggleLog;

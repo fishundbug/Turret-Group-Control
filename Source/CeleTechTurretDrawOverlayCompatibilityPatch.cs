@@ -23,29 +23,12 @@ namespace TurretGroupControl
     /// 补丁仅作用于 <c>Building_CMCTurretGun</c> 声明的该方法，其全部炮塔子类（导弹/防空/主炮/
     /// 火箭/地堡/PD）通过继承同样得到修复。CeleTech 未安装时自动禁用，不产生任何依赖。
     /// </summary>
-    [HarmonyPatch]
     public static class CeleTechTurretDrawOverlayCompatibilityPatch
     {
         private const string CeleTechTurretTypeName = "TOT_DLL_test.Building_CMCTurretGun";
 
-        // 以非虚方式调用基类 Building/Thing 的 DrawExtraSelectionOverlays，
-        // 等价于反编译中的 ((Building)this).DrawExtraSelectionOverlays()，避免再次触发本补丁导致递归。
-        private static readonly Action<Thing> BaseDrawExtraSelectionOverlays =
-            AccessTools.MethodDelegate<Action<Thing>>(
-                AccessTools.Method(typeof(Building), nameof(Thing.DrawExtraSelectionOverlays)),
-                null,
-                false,
-                Type.EmptyTypes);
-
-        // 强制目标连线材质，与原版 / CeleTech 使用的一致，自建以免依赖第三方或私有字段。
-        private static readonly Material ForcedTargetLineMat =
-            MaterialPool.MatFrom(GenDraw.LineTexPath, ShaderDatabase.Transparent, new Color(1f, 0.5f, 0.5f));
-
-        // 仅当 CeleTech Arsenal 已安装时启用本补丁。
-        public static bool Prepare()
-        {
-            return AccessTools.TypeByName(CeleTechTurretTypeName) != null;
-        }
+        private static Action<Thing> baseDrawExtraSelectionOverlays;
+        private static bool baseDrawExtraSelectionOverlaysResolved;
 
         public static IEnumerable<MethodBase> TargetMethods()
         {
@@ -78,15 +61,66 @@ namespace TurretGroupControl
 
             // AttackVerb 为空：原方法会在 AttackVerb.verbProps 处空引用。补上作者遗漏的守卫，
             // 绘制不依赖 verb 的安全覆盖层，跳过射程圈，避免每帧崩溃。
-            BaseDrawExtraSelectionOverlays(__instance);
+            DrawBaseSelectionOverlaysSafe(__instance);
             DrawForcedTargetLineSafe(turret);
             return false;
+        }
+
+        private static void DrawBaseSelectionOverlaysSafe(Building instance)
+        {
+            var drawBase = ResolveBaseDrawExtraSelectionOverlays();
+            drawBase?.Invoke(instance);
+        }
+
+        private static Action<Thing> ResolveBaseDrawExtraSelectionOverlays()
+        {
+            if (baseDrawExtraSelectionOverlaysResolved)
+            {
+                return baseDrawExtraSelectionOverlays;
+            }
+
+            baseDrawExtraSelectionOverlaysResolved = true;
+            try
+            {
+                var method = AccessTools.DeclaredMethod(typeof(Building), nameof(Thing.DrawExtraSelectionOverlays))
+                    ?? AccessTools.Method(typeof(Thing), nameof(Thing.DrawExtraSelectionOverlays));
+                if (method == null)
+                {
+                    return null;
+                }
+
+                if (method.DeclaringType == typeof(Building))
+                {
+#pragma warning disable CS0618
+                    var buildingDelegate = AccessTools.MethodDelegate<Action<Building>>(method, null, false);
+#pragma warning restore CS0618
+                    baseDrawExtraSelectionOverlays = thing =>
+                    {
+                        if (thing is Building building)
+                        {
+                            buildingDelegate(building);
+                        }
+                    };
+                }
+                else
+                {
+#pragma warning disable CS0618
+                    baseDrawExtraSelectionOverlays = AccessTools.MethodDelegate<Action<Thing>>(method, null, false);
+#pragma warning restore CS0618
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WarningOnce($"[Turret Group Control] 无法创建 CeleTech 覆盖层基类调用委托，将仅跳过 CeleTech 缺失 AttackVerb 的射程圈绘制。原因：{ex.GetType().Name}: {ex.Message}", 19460104);
+            }
+
+            return baseDrawExtraSelectionOverlays;
         }
 
         private static void DrawForcedTargetLineSafe(Building_Turret turret)
         {
             LocalTargetInfo forced = turret.forcedTarget;
-            if (!forced.IsValid || (forced.HasThing && !forced.Thing.Spawned))
+            if (!forced.IsValid || (forced.HasThing && (forced.Thing == null || !forced.Thing.Spawned)))
             {
                 return;
             }
@@ -95,7 +129,7 @@ namespace TurretGroupControl
             Vector3 source = turret.TrueCenter();
             target.y = AltitudeLayer.MetaOverlays.AltitudeFor();
             source.y = target.y;
-            GenDraw.DrawLineBetween(source, target, ForcedTargetLineMat, 0.2f);
+            GenDraw.DrawLineBetween(source, target, Building_TurretGun.ForcedTargetLineMat, 0.2f);
         }
     }
 }
