@@ -65,6 +65,11 @@ namespace TurretGroupControl
 
             var group = manager.FindGroupFor(turret);
             var selectedTurrets = TurretGroupUtility.GetSelectedSupportedTurrets().ToList();
+            if (selectedTurrets.Count > 1 && selectedTurrets[0] != turret)
+            {
+                yield break;
+            }
+
             if (selectedTurrets.Count == 0)
             {
                 selectedTurrets.Add(turret);
@@ -82,8 +87,7 @@ namespace TurretGroupControl
             {
                 yield return SelectGroupCommand(manager, group);
                 yield return RemoveFromGroupCommand(manager, turret, group);
-                yield return SetGroupHoldFireCommand(manager, group, true);
-                yield return SetGroupHoldFireCommand(manager, group, false);
+                yield return ToggleGroupHoldFireCommand(manager, group);
             }
             else if (manager.AllGroups().Any())
             {
@@ -181,18 +185,20 @@ namespace TurretGroupControl
             };
         }
 
-        private static Command_Action SetGroupHoldFireCommand(TurretGroupManager manager, TurretGroupData group, bool holdFire)
+        private static Command_Toggle ToggleGroupHoldFireCommand(TurretGroupManager manager, TurretGroupData group)
         {
-            return new Command_Action
+            return new Command_Toggle
             {
-                defaultLabel = holdFire ? "TurretGroupControl_GroupHoldFire".Translate() : "TurretGroupControl_GroupFireAtWill".Translate(),
-                defaultDesc = holdFire ? "TurretGroupControl_GroupHoldFireDesc".Translate(group.name) : "TurretGroupControl_GroupFireAtWillDesc".Translate(group.name),
-                icon = holdFire ? TexCommand.DesirePower : TexCommand.Attack,
-                action = delegate
+                defaultLabel = "TurretGroupControl_GroupHoldFire".Translate(),
+                defaultDesc = group.holdFire ? "TurretGroupControl_GroupFireAtWillDesc".Translate(group.name) : "TurretGroupControl_GroupHoldFireDesc".Translate(group.name),
+                icon = ContentFinder<Texture2D>.Get("UI/Commands/HoldFire"),
+                toggleAction = delegate
                 {
-                    manager.ToggleHoldFire(group.id, holdFire);
-                    Messages.Message(holdFire ? "TurretGroupControl_GroupHoldFireSet".Translate(group.name) : "TurretGroupControl_GroupFireAtWillSet".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
-                }
+                    bool newHoldFire = !group.holdFire;
+                    manager.ToggleHoldFire(group.id, newHoldFire);
+                    Messages.Message(newHoldFire ? "TurretGroupControl_GroupHoldFireSet".Translate(group.name) : "TurretGroupControl_GroupFireAtWillSet".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
+                },
+                isActive = () => group.holdFire
             };
         }
     }
