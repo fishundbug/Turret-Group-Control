@@ -36,6 +36,7 @@ namespace TurretGroupControl
             delayedCompatibilityPatchesApplied = true;
             PatchPostfixes(BuildingTurretGunGetGizmosPatch.TargetMethods(), typeof(BuildingTurretGunGetGizmosPatch), nameof(BuildingTurretGunGetGizmosPatch.Postfix), "炮塔组 Gizmo");
             PatchPostfixes(TurretGetInspectStringPatch.TargetMethods(), typeof(TurretGetInspectStringPatch), nameof(TurretGetInspectStringPatch.Postfix), "炮塔信息栏");
+            PatchPostfixes(TurretGroupSelectionOverlayPatch.TargetMethods(), typeof(TurretGroupSelectionOverlayPatch), nameof(TurretGroupSelectionOverlayPatch.Postfix), "炮塔组选中覆盖层");
             PatchPrefixes(CeleTechTurretDrawOverlayCompatibilityPatch.TargetMethods(), typeof(CeleTechTurretDrawOverlayCompatibilityPatch), nameof(CeleTechTurretDrawOverlayCompatibilityPatch.Prefix), "CeleTech 选中覆盖层");
         }
 
