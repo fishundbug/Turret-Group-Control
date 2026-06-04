@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\Programming\\RimworldMod\\Turret Group Control\\Source\\TurretGroupControl.csproj": {}
+    "D:\\Programming\\RimworldMod\\Turret Group Control\\Source\\TurretGroupControl.csproj": {}
   },
   "projects": {
-    "d:\\Programming\\RimworldMod\\Turret Group Control\\Source\\TurretGroupControl.csproj": {
+    "D:\\Programming\\RimworldMod\\Turret Group Control\\Source\\TurretGroupControl.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\Programming\\RimworldMod\\Turret Group Control\\Source\\TurretGroupControl.csproj",
+        "projectUniqueName": "D:\\Programming\\RimworldMod\\Turret Group Control\\Source\\TurretGroupControl.csproj",
         "projectName": "TurretGroupControl",
-        "projectPath": "d:\\Programming\\RimworldMod\\Turret Group Control\\Source\\TurretGroupControl.csproj",
+        "projectPath": "D:\\Programming\\RimworldMod\\Turret Group Control\\Source\\TurretGroupControl.csproj",
         "packagesPath": "C:\\Users\\fishu\\.nuget\\packages\\",
-        "outputPath": "d:\\Programming\\RimworldMod\\Turret Group Control\\Source\\obj\\",
+        "outputPath": "D:\\Programming\\RimworldMod\\Turret Group Control\\Source\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\fishu\\AppData\\Roaming\\NuGet\\NuGet.Config"

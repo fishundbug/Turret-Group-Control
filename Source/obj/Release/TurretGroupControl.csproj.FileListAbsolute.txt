@@ -1,0 +1,5 @@
+D:\Programming\RimworldMod\Turret Group Control\Assemblies\TurretGroupControl.dll
+D:\Programming\RimworldMod\Turret Group Control\Source\obj\Release\TurretGroupControl.csproj.AssemblyReference.cache
+D:\Programming\RimworldMod\Turret Group Control\Source\obj\Release\TurretGroupControl.GeneratedMSBuildEditorConfig.editorconfig
+D:\Programming\RimworldMod\Turret Group Control\Source\obj\Release\TurretGroupControl.csproj.CoreCompileInputs.cache
+D:\Programming\RimworldMod\Turret Group Control\Source\obj\Release\TurretGroupControl.dll
