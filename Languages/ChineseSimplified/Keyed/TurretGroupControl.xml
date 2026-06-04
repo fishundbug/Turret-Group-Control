@@ -56,6 +56,8 @@
   <TurretGroupControl_TurretInOtherGroup>{0}（当前在 {1}）</TurretGroupControl_TurretInOtherGroup>
   <TurretGroupControl_CurrentGroupInspect>所属炮塔组：{0}</TurretGroupControl_CurrentGroupInspect>
   <TurretGroupControl_DefaultGroupName>炮塔组 {0}</TurretGroupControl_DefaultGroupName>
+  <TurretGroupControl_Search>搜索</TurretGroupControl_Search>
+  <TurretGroupControl_InvalidGroupName>炮塔组名称不能为空。</TurretGroupControl_InvalidGroupName>
 
   <!-- 消息 -->
   <TurretGroupControl_CreatedGroup>已创建 {0}，包含 {1} 座炮塔。</TurretGroupControl_CreatedGroup>

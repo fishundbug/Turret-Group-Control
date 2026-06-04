@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
@@ -19,7 +20,10 @@ namespace TurretGroupControl
         private readonly Map map;
         private readonly TurretGroupManager manager;
         private int selectedGroupId = -1;
+        private int renameBufferGroupId = -1;
         private string renameBuffer = string.Empty;
+        private string memberSearchBuffer = string.Empty;
+        private string availableSearchBuffer = string.Empty;
         private Vector2 groupScrollPosition;
         private Vector2 memberScrollPosition;
         private Vector2 availableScrollPosition;
@@ -74,6 +78,7 @@ namespace TurretGroupControl
             {
                 var group = manager.CreateEmptyGroup();
                 selectedGroupId = group.id;
+                renameBufferGroupId = group.id;
                 renameBuffer = group.name;
                 Messages.Message("TurretGroupControl_CreatedGroup".Translate(group.name, group.members.Count), MessageTypeDefOf.TaskCompletion, false);
             }
@@ -112,6 +117,7 @@ namespace TurretGroupControl
             if (Widgets.ButtonInvisible(rect))
             {
                 selectedGroupId = group.id;
+                renameBufferGroupId = group.id;
                 renameBuffer = group.name;
             }
 
@@ -148,10 +154,19 @@ namespace TurretGroupControl
 
             var nameRect = new Rect(rect.x, rect.y + 34f, rect.width - ButtonWidth - Gap, 32f);
             var renameRect = new Rect(nameRect.xMax + Gap, nameRect.y, ButtonWidth, 32f);
+            if (renameBufferGroupId != group.id)
+            {
+                renameBufferGroupId = group.id;
+                renameBuffer = group.name;
+            }
             renameBuffer = Widgets.TextField(nameRect, renameBuffer ?? string.Empty);
             if (Widgets.ButtonText(renameRect, "TurretGroupControl_RenameGroup".Translate()))
             {
-                if (manager.RenameGroup(group.id, renameBuffer))
+                if ((renameBuffer ?? string.Empty).Trim().NullOrEmpty())
+                {
+                    Messages.Message("TurretGroupControl_InvalidGroupName".Translate(), MessageTypeDefOf.RejectInput, false);
+                }
+                else if (manager.RenameGroup(group.id, renameBuffer))
                 {
                     renameBuffer = group.name;
                     Messages.Message("TurretGroupControl_RenamedGroup".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
@@ -191,7 +206,9 @@ namespace TurretGroupControl
             Widgets.Label(new Rect(rect.x, rect.y, rect.width, 24f), "TurretGroupControl_Members".Translate());
 
             var members = group.members?.Where(t => t != null && !t.DestroyedOrNull()).ToList() ?? new List<Thing>();
-            var listRect = new Rect(rect.x, rect.y + 28f, rect.width, rect.height - 28f);
+            DrawSearchField(new Rect(rect.x, rect.y + 28f, rect.width, 28f), ref memberSearchBuffer);
+            members = FilterTurrets(members, memberSearchBuffer).ToList();
+            var listRect = new Rect(rect.x, rect.y + 60f, rect.width, rect.height - 60f);
             if (members.Count == 0)
             {
                 Widgets.Label(listRect, "TurretGroupControl_NoMembers".Translate());
@@ -217,6 +234,10 @@ namespace TurretGroupControl
             var buttonRect = new Rect(rect.xMax - SmallButtonWidth, rect.y, SmallButtonWidth, rect.height);
             var labelRect = new Rect(rect.x + 4f, rect.y + 4f, buttonRect.x - rect.x - 8f, rect.height - 8f);
             Widgets.Label(labelRect, TurretLabel(turret));
+            if (Widgets.ButtonInvisible(labelRect) && Event.current.clickCount >= 2)
+            {
+                SelectAndJumpToTurret(turret);
+            }
             if (Widgets.ButtonText(buttonRect, "TurretGroupControl_RemoveTurret".Translate()))
             {
                 manager.RemoveMember(group.id, turret);
@@ -231,7 +252,9 @@ namespace TurretGroupControl
             Widgets.Label(new Rect(rect.x, rect.y, rect.width, 24f), "TurretGroupControl_AvailableTurrets".Translate());
 
             var turrets = AvailableTurrets().ToList();
-            var listRect = new Rect(rect.x, rect.y + 28f, rect.width, rect.height - 28f);
+            DrawSearchField(new Rect(rect.x, rect.y + 28f, rect.width, 28f), ref availableSearchBuffer);
+            turrets = FilterTurrets(turrets, availableSearchBuffer).ToList();
+            var listRect = new Rect(rect.x, rect.y + 60f, rect.width, rect.height - 60f);
             if (turrets.Count == 0)
             {
                 Widgets.Label(listRect, "TurretGroupControl_NoAvailableTurrets".Translate());
@@ -259,6 +282,10 @@ namespace TurretGroupControl
             var labelRect = new Rect(rect.x + 4f, rect.y + 4f, buttonRect.x - rect.x - 8f, rect.height - 8f);
             string label = currentGroup == null ? TurretLabel(turret) : "TurretGroupControl_TurretInOtherGroup".Translate(TurretLabel(turret), currentGroup.name).ToString();
             Widgets.Label(labelRect, label);
+            if (Widgets.ButtonInvisible(labelRect) && Event.current.clickCount >= 2)
+            {
+                SelectAndJumpToTurret(turret);
+            }
 
             string buttonLabel = currentGroup == null ? "TurretGroupControl_AddTurret".Translate() : "TurretGroupControl_MoveToGroup".Translate();
             if (Widgets.ButtonText(buttonRect, buttonLabel))
@@ -293,6 +320,7 @@ namespace TurretGroupControl
                     if (manager.DeleteGroup(group.id))
                     {
                         selectedGroupId = -1;
+                        renameBufferGroupId = -1;
                         renameBuffer = string.Empty;
                         Messages.Message("TurretGroupControl_DeletedGroup".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
                     }
@@ -306,8 +334,9 @@ namespace TurretGroupControl
             var group = manager.GetGroup(selectedGroupId);
             if (group != null)
             {
-                if (renameBuffer.NullOrEmpty())
+                if (renameBufferGroupId != group.id)
                 {
+                    renameBufferGroupId = group.id;
                     renameBuffer = group.name;
                 }
                 return;
@@ -317,12 +346,50 @@ namespace TurretGroupControl
             if (firstGroup == null)
             {
                 selectedGroupId = -1;
+                renameBufferGroupId = -1;
                 renameBuffer = string.Empty;
                 return;
             }
 
             selectedGroupId = firstGroup.id;
+            renameBufferGroupId = firstGroup.id;
             renameBuffer = firstGroup.name;
+        }
+
+        private static void DrawSearchField(Rect rect, ref string searchBuffer)
+        {
+            var labelRect = new Rect(rect.x, rect.y, 64f, rect.height);
+            var fieldRect = new Rect(labelRect.xMax + 6f, rect.y, rect.width - labelRect.width - 6f, rect.height);
+            Widgets.Label(labelRect, "TurretGroupControl_Search".Translate());
+            searchBuffer = Widgets.TextField(fieldRect, searchBuffer ?? string.Empty);
+        }
+
+        private static IEnumerable<Thing> FilterTurrets(IEnumerable<Thing> turrets, string searchText)
+        {
+            if (searchText.NullOrEmpty())
+            {
+                return turrets;
+            }
+
+            string normalizedSearch = searchText.Trim();
+            if (normalizedSearch.NullOrEmpty())
+            {
+                return turrets;
+            }
+
+            return turrets.Where(turret => TurretLabel(turret).IndexOf(normalizedSearch, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private static void SelectAndJumpToTurret(Thing turret)
+        {
+            if (turret == null || turret.DestroyedOrNull())
+            {
+                return;
+            }
+
+            Find.Selector.ClearSelection();
+            Find.Selector.Select(turret);
+            CameraJumper.TryJumpAndSelect(turret, CameraJumper.MovementMode.Cut);
         }
 
         private static string TurretLabel(Thing turret)
