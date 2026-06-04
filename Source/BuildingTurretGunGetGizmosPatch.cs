@@ -13,8 +13,8 @@ namespace TurretGroupControl
     {
         private static readonly Texture2D ManageIcon = TexButton.ToggleLog;
         private static readonly Texture2D CreateGroupIcon = TexButton.Plus;
-        private static readonly Texture2D AddToGroupIcon = TexCommand.DesirePower;
-        private static readonly Texture2D SelectGroupIcon = TexCommand.Attack;
+        private static readonly Texture2D AddToGroupIcon = ContentFinder<Texture2D>.Get("UI/Commands/Link");
+        private static readonly Texture2D SelectGroupIcon = ContentFinder<Texture2D>.Get("UI/Commands/SelectAll");
         private static readonly Texture2D RemoveFromGroupIcon = TexButton.Delete;
 
         public static IEnumerable<MethodBase> TargetMethods()
