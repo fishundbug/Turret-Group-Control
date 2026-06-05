@@ -37,7 +37,7 @@ namespace TurretGroupControl
         public static IEnumerable<Gizmo> Postfix(IEnumerable<Gizmo> values, Thing __instance)
         {
             var existingGizmos = values?.ToList() ?? new List<Gizmo>();
-            if (existingGizmos.OfType<Command>().Any(command => command.defaultLabel == "TurretGroupControl_OpenManagementWindow".Translate().ToString()))
+            if (existingGizmos.OfType<TurretGroupManagementCommand>().Any())
             {
                 return existingGizmos;
             }
@@ -95,9 +95,9 @@ namespace TurretGroupControl
             }
         }
 
-        private static Command_Action OpenManagementWindowCommand(Map map)
+        private static TurretGroupManagementCommand OpenManagementWindowCommand(Map map)
         {
-            return new Command_Action
+            return new TurretGroupManagementCommand
             {
                 defaultLabel = "TurretGroupControl_OpenManagementWindow".Translate(),
                 defaultDesc = "TurretGroupControl_OpenManagementWindowDesc".Translate(),
@@ -200,6 +200,9 @@ namespace TurretGroupControl
                 },
                 isActive = () => group.holdFire
             };
+        }
+        private class TurretGroupManagementCommand : Command_Action
+        {
         }
     }
 }

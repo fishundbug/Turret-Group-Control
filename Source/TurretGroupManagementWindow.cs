@@ -17,6 +17,7 @@ namespace TurretGroupControl
         private const float ButtonWidth = 110f;
         private const float SmallButtonWidth = 80f;
         private const float DoubleClickInterval = 0.45f;
+        private const int AvailableTurretRefreshFrameInterval = 120;
 
         private readonly Map map;
         private readonly TurretGroupManager manager;
@@ -31,12 +32,25 @@ namespace TurretGroupControl
         private Vector2 memberScrollPosition;
         private Vector2 availableScrollPosition;
 
+        private List<TurretGroupData> cachedGroups;
+        private List<Thing> cachedMembers;
+        private List<Thing> cachedAvailableTurrets;
+        private readonly Dictionary<Thing, string> cachedTurretLabels = new Dictionary<Thing, string>();
+        private bool groupCacheDirty = true;
+        private bool memberCacheDirty = true;
+        private bool availableCacheDirty = true;
+        private int cachedMemberGroupId = -1;
+        private string cachedMemberSearch = string.Empty;
+        private string cachedAvailableSearch = string.Empty;
+        private int nextAvailableTurretRefreshFrame;
+
         public override Vector2 InitialSize => new Vector2(WindowWidth, WindowHeight);
 
         public TurretGroupManagementWindow(Map map)
         {
             this.map = map;
             manager = TurretGroupUtility.GetManager(map);
+            manager?.CleanupAllGroups();
             layer = WindowLayer.GameUI;
             doCloseX = true;
             absorbInputAroundWindow = false;
@@ -52,7 +66,7 @@ namespace TurretGroupControl
                 return;
             }
 
-            manager.CleanupAllGroups();
+            RefreshGroupCacheIfNeeded();
             EnsureSelectedGroupIsValid();
 
             Text.Font = GameFont.Medium;
@@ -85,10 +99,12 @@ namespace TurretGroupControl
                 selectedGroupId = group.id;
                 renameBufferGroupId = group.id;
                 renameBuffer = group.name;
+                InvalidateCaches();
                 Messages.Message("TurretGroupControl_CreatedGroup".Translate(group.name, group.members.Count), MessageTypeDefOf.TaskCompletion, false);
             }
 
-            var groups = manager.AllGroups().ToList();
+            RefreshGroupCacheIfNeeded();
+            var groups = cachedGroups;
             var listRect = new Rect(rect.x, newGroupRect.yMax + Gap, rect.width, rect.yMax - newGroupRect.yMax - Gap);
             if (groups.Count == 0)
             {
@@ -98,12 +114,12 @@ namespace TurretGroupControl
 
             var viewRect = new Rect(0f, 0f, listRect.width - 16f, groups.Count * RowHeight);
             Widgets.BeginScrollView(listRect, ref groupScrollPosition, viewRect);
-            for (int i = 0; i < groups.Count; i++)
+            DrawVisibleRows(groups.Count, groupScrollPosition, listRect, viewRect.width, i =>
             {
                 var group = groups[i];
                 var rowRect = new Rect(0f, i * RowHeight, viewRect.width, RowHeight - 2f);
                 DrawGroupRow(rowRect, group);
-            }
+            });
             Widgets.EndScrollView();
         }
 
@@ -124,6 +140,8 @@ namespace TurretGroupControl
                 selectedGroupId = group.id;
                 renameBufferGroupId = group.id;
                 renameBuffer = group.name;
+                memberCacheDirty = true;
+                availableCacheDirty = true;
             }
 
             Widgets.Label(rect.ContractedBy(4f), label);
@@ -174,6 +192,7 @@ namespace TurretGroupControl
                 else if (manager.RenameGroup(group.id, renameBuffer))
                 {
                     renameBuffer = group.name;
+                    groupCacheDirty = true;
                     Messages.Message("TurretGroupControl_RenamedGroup".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
                 }
             }
@@ -191,11 +210,13 @@ namespace TurretGroupControl
             if (Widgets.ButtonText(holdRect, "TurretGroupControl_GroupHoldFire".Translate()))
             {
                 manager.ToggleHoldFire(group.id, true);
+                groupCacheDirty = true;
                 Messages.Message("TurretGroupControl_GroupHoldFireSet".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
             }
             if (Widgets.ButtonText(fireRect, "TurretGroupControl_GroupFireAtWill".Translate()))
             {
                 manager.ToggleHoldFire(group.id, false);
+                groupCacheDirty = true;
                 Messages.Message("TurretGroupControl_GroupFireAtWillSet".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
             }
             if (Widgets.ButtonText(deleteRect, "TurretGroupControl_DeleteGroup".Translate()))
@@ -210,9 +231,8 @@ namespace TurretGroupControl
             rect = rect.ContractedBy(8f);
             Widgets.Label(new Rect(rect.x, rect.y, rect.width, 24f), "TurretGroupControl_Members".Translate());
 
-            var members = group.members?.Where(t => t != null && !t.DestroyedOrNull()).ToList() ?? new List<Thing>();
             DrawSearchField(new Rect(rect.x, rect.y + 28f, rect.width, 28f), ref memberSearchBuffer);
-            members = FilterTurrets(members, memberSearchBuffer).ToList();
+            var members = GetCachedMembers(group);
             var listRect = new Rect(rect.x, rect.y + 60f, rect.width, rect.height - 60f);
             if (members.Count == 0)
             {
@@ -222,10 +242,10 @@ namespace TurretGroupControl
 
             var viewRect = new Rect(0f, 0f, listRect.width - 16f, members.Count * RowHeight);
             Widgets.BeginScrollView(listRect, ref memberScrollPosition, viewRect);
-            for (int i = 0; i < members.Count; i++)
+            DrawVisibleRows(members.Count, memberScrollPosition, listRect, viewRect.width, i =>
             {
                 DrawMemberRow(new Rect(0f, i * RowHeight, viewRect.width, RowHeight - 2f), group, members[i]);
-            }
+            });
             Widgets.EndScrollView();
         }
 
@@ -243,6 +263,7 @@ namespace TurretGroupControl
             if (Widgets.ButtonText(buttonRect, "TurretGroupControl_RemoveTurret".Translate()))
             {
                 manager.RemoveMember(group.id, turret);
+                InvalidateCaches();
                 Messages.Message("TurretGroupControl_RemovedTurretFromGroup".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
             }
         }
@@ -253,9 +274,8 @@ namespace TurretGroupControl
             rect = rect.ContractedBy(8f);
             Widgets.Label(new Rect(rect.x, rect.y, rect.width, 24f), "TurretGroupControl_AvailableTurrets".Translate());
 
-            var turrets = AvailableTurrets().ToList();
             DrawSearchField(new Rect(rect.x, rect.y + 28f, rect.width, 28f), ref availableSearchBuffer);
-            turrets = FilterTurrets(turrets, availableSearchBuffer).ToList();
+            var turrets = GetCachedAvailableTurrets();
             var listRect = new Rect(rect.x, rect.y + 60f, rect.width, rect.height - 60f);
             if (turrets.Count == 0)
             {
@@ -265,10 +285,10 @@ namespace TurretGroupControl
 
             var viewRect = new Rect(0f, 0f, listRect.width - 16f, turrets.Count * RowHeight);
             Widgets.BeginScrollView(listRect, ref availableScrollPosition, viewRect);
-            for (int i = 0; i < turrets.Count; i++)
+            DrawVisibleRows(turrets.Count, availableScrollPosition, listRect, viewRect.width, i =>
             {
                 DrawAvailableTurretRow(new Rect(0f, i * RowHeight, viewRect.width, RowHeight - 2f), group, turrets[i]);
-            }
+            });
             Widgets.EndScrollView();
         }
 
@@ -290,6 +310,7 @@ namespace TurretGroupControl
             if (Widgets.ButtonText(buttonRect, buttonLabel))
             {
                 manager.MoveMember(turret, group.id);
+                InvalidateCaches();
                 Messages.Message("TurretGroupControl_AddedTurretToGroup".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
             }
         }
@@ -321,6 +342,7 @@ namespace TurretGroupControl
                         selectedGroupId = -1;
                         renameBufferGroupId = -1;
                         renameBuffer = string.Empty;
+                        InvalidateCaches();
                         Messages.Message("TurretGroupControl_DeletedGroup".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
                     }
                 },
@@ -341,7 +363,8 @@ namespace TurretGroupControl
                 return;
             }
 
-            var firstGroup = manager.AllGroups().FirstOrDefault();
+            RefreshGroupCacheIfNeeded();
+            var firstGroup = cachedGroups.FirstOrDefault();
             if (firstGroup == null)
             {
                 selectedGroupId = -1;
@@ -353,6 +376,77 @@ namespace TurretGroupControl
             selectedGroupId = firstGroup.id;
             renameBufferGroupId = firstGroup.id;
             renameBuffer = firstGroup.name;
+            memberCacheDirty = true;
+            availableCacheDirty = true;
+        }
+
+        private void InvalidateCaches()
+        {
+            groupCacheDirty = true;
+            memberCacheDirty = true;
+            availableCacheDirty = true;
+            nextAvailableTurretRefreshFrame = 0;
+        }
+
+        private void RefreshGroupCacheIfNeeded()
+        {
+            if (!groupCacheDirty && cachedGroups != null)
+            {
+                return;
+            }
+
+            cachedGroups = manager.AllGroups().ToList();
+            groupCacheDirty = false;
+        }
+
+        private List<Thing> GetCachedMembers(TurretGroupData group)
+        {
+            string search = NormalizeSearch(memberSearchBuffer);
+            if (!memberCacheDirty && cachedMembers != null && cachedMemberGroupId == group.id && cachedMemberSearch == search)
+            {
+                return cachedMembers;
+            }
+
+            cachedMemberGroupId = group.id;
+            cachedMemberSearch = search;
+            cachedMembers = new List<Thing>();
+            if (group.members != null)
+            {
+                for (int i = 0; i < group.members.Count; i++)
+                {
+                    var turret = group.members[i];
+                    if (IsValidTurretForWindow(turret) && MatchesSearch(turret, search))
+                    {
+                        cachedMembers.Add(turret);
+                    }
+                }
+            }
+
+            memberCacheDirty = false;
+            return cachedMembers;
+        }
+
+        private List<Thing> GetCachedAvailableTurrets()
+        {
+            string search = NormalizeSearch(availableSearchBuffer);
+            if (!availableCacheDirty && cachedAvailableTurrets != null && cachedAvailableSearch == search && Time.frameCount < nextAvailableTurretRefreshFrame)
+            {
+                return cachedAvailableTurrets;
+            }
+
+            cachedAvailableSearch = search;
+            cachedAvailableTurrets = new List<Thing>();
+            foreach (var turret in AvailableTurrets())
+            {
+                if (MatchesSearch(turret, search))
+                {
+                    cachedAvailableTurrets.Add(turret);
+                }
+            }
+
+            availableCacheDirty = false;
+            nextAvailableTurretRefreshFrame = Time.frameCount + AvailableTurretRefreshFrameInterval;
+            return cachedAvailableTurrets;
         }
 
         private static void DrawSearchField(Rect rect, ref string searchBuffer)
@@ -363,20 +457,29 @@ namespace TurretGroupControl
             searchBuffer = Widgets.TextField(fieldRect, searchBuffer ?? string.Empty);
         }
 
-        private static IEnumerable<Thing> FilterTurrets(IEnumerable<Thing> turrets, string searchText)
+        private static string NormalizeSearch(string searchText)
         {
-            if (searchText.NullOrEmpty())
-            {
-                return turrets;
-            }
+            return (searchText ?? string.Empty).Trim();
+        }
 
-            string normalizedSearch = searchText.Trim();
-            if (normalizedSearch.NullOrEmpty())
-            {
-                return turrets;
-            }
+        private bool MatchesSearch(Thing turret, string searchText)
+        {
+            return searchText.NullOrEmpty() || TurretLabel(turret).IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
 
-            return turrets.Where(turret => TurretLabel(turret).IndexOf(normalizedSearch, StringComparison.OrdinalIgnoreCase) >= 0);
+        private static bool IsValidTurretForWindow(Thing turret)
+        {
+            return turret != null && !turret.DestroyedOrNull() && turret.Spawned;
+        }
+
+        private static void DrawVisibleRows(int count, Vector2 scrollPosition, Rect listRect, float width, Action<int> drawRow)
+        {
+            int startIndex = Mathf.Max(0, Mathf.FloorToInt(scrollPosition.y / RowHeight));
+            int endIndex = Mathf.Min(count - 1, Mathf.CeilToInt((scrollPosition.y + listRect.height) / RowHeight));
+            for (int i = startIndex; i <= endIndex; i++)
+            {
+                drawRow(i);
+            }
         }
 
         private void HandleTurretRowClick(Rect rect, Thing turret)
@@ -409,14 +512,20 @@ namespace TurretGroupControl
             CameraJumper.TryJumpAndSelect(turret, CameraJumper.MovementMode.Cut);
         }
 
-        private static string TurretLabel(Thing turret)
+        private string TurretLabel(Thing turret)
         {
             if (turret == null)
             {
                 return string.Empty;
             }
 
-            return "TurretGroupControl_TurretLabel".Translate(turret.LabelCap, turret.Position).ToString();
+            if (!cachedTurretLabels.TryGetValue(turret, out var label))
+            {
+                label = "TurretGroupControl_TurretLabel".Translate(turret.LabelCap, turret.Position).ToString();
+                cachedTurretLabels[turret] = label;
+            }
+
+            return label;
         }
     }
 }

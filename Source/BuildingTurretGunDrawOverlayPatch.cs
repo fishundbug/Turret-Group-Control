@@ -55,8 +55,7 @@ namespace TurretGroupControl
                 return;
             }
 
-            group.CleanupMembers();
-            foreach (var member in group.members.Where(member => member != null && member.Spawned && member.Map == __instance.Map))
+            foreach (var member in group.members.Where(member => member != null && !member.DestroyedOrNull() && member.Spawned && member.Map == __instance.Map))
             {
                 // 保留当前被选中炮塔的原版白色选框；只给同组其它炮塔画原版链接淡黄色选框。
                 if (Find.Selector.IsSelected(member))

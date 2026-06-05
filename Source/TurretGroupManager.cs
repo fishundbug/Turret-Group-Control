@@ -10,6 +10,7 @@ namespace TurretGroupControl
     public class TurretGroupManager : MapComponent
     {
         private Dictionary<int, TurretGroupData> groups = new Dictionary<int, TurretGroupData>();
+        private Dictionary<Thing, TurretGroupData> groupByTurret = new Dictionary<Thing, TurretGroupData>();
         private int nextGroupId = 1;
         private static FieldInfo buildingTurretGunHoldFireField;
         private static bool buildingTurretGunHoldFireFieldResolved;
@@ -28,6 +29,7 @@ namespace TurretGroupControl
             {
                 groups ??= new Dictionary<int, TurretGroupData>();
                 CleanupAllGroups();
+                RebuildMembershipIndex();
             }
         }
 
@@ -84,20 +86,24 @@ namespace TurretGroupControl
 
         public TurretGroupData FindGroupFor(Thing thing)
         {
-            if (thing == null)
+            if (thing == null || thing.DestroyedOrNull())
             {
                 return null;
             }
 
-            foreach (var group in groups.Values)
+            EnsureMembershipIndex();
+            if (!groupByTurret.TryGetValue(thing, out var group))
             {
-                if (group.Contains(thing))
-                {
-                    return group;
-                }
+                return null;
             }
 
-            return null;
+            if (group == null || !groups.TryGetValue(group.id, out var currentGroup) || currentGroup != group || group.members == null || !group.members.Contains(thing))
+            {
+                groupByTurret.Remove(thing);
+                return null;
+            }
+
+            return group;
         }
 
         public void AddMember(int groupId, Thing turret)
@@ -117,9 +123,14 @@ namespace TurretGroupControl
                 return;
             }
 
+            EnsureMembershipIndex();
             RemoveMember(turret);
             group.CleanupMembers();
-            group.members.Add(turret);
+            if (!group.members.Contains(turret))
+            {
+                group.members.Add(turret);
+            }
+            groupByTurret[turret] = group;
             ApplyHoldFireToTurret(turret, group.holdFire);
         }
 
@@ -130,9 +141,31 @@ namespace TurretGroupControl
                 return;
             }
 
+            EnsureMembershipIndex();
+            if (groupByTurret.TryGetValue(turret, out var indexedGroup) && indexedGroup?.members != null)
+            {
+                indexedGroup.members.RemoveAll(t => t == turret);
+                groupByTurret.Remove(turret);
+                return;
+            }
+
+            bool removed = false;
             foreach (var group in groups.Values)
             {
-                group.members?.RemoveAll(t => t == turret);
+                if (group?.members == null)
+                {
+                    continue;
+                }
+
+                if (group.members.RemoveAll(t => t == turret) > 0)
+                {
+                    removed = true;
+                }
+            }
+
+            if (removed)
+            {
+                groupByTurret.Remove(turret);
             }
         }
 
@@ -143,7 +176,13 @@ namespace TurretGroupControl
                 return;
             }
 
-            group.members?.RemoveAll(t => t == turret);
+            if (group.members?.RemoveAll(t => t == turret) > 0)
+            {
+                if (groupByTurret.TryGetValue(turret, out var indexedGroup) && indexedGroup == group)
+                {
+                    groupByTurret.Remove(turret);
+                }
+            }
         }
 
         public bool RenameGroup(int groupId, string newName)
@@ -165,6 +204,12 @@ namespace TurretGroupControl
 
         public bool DeleteGroup(int groupId)
         {
+            if (!groups.TryGetValue(groupId, out var group))
+            {
+                return false;
+            }
+
+            RemoveIndexEntriesForGroup(group);
             return groups.Remove(groupId);
         }
 
@@ -192,6 +237,7 @@ namespace TurretGroupControl
             }
 
             group.CleanupMembers();
+            RebuildMembershipIndex();
             foreach (var thing in group.members)
             {
                 ApplyHoldFireToTurret(thing, group.holdFire);
@@ -206,6 +252,7 @@ namespace TurretGroupControl
             }
 
             group.CleanupMembers();
+            RebuildMembershipIndex();
             var selector = Find.Selector;
             selector.ClearSelection();
             foreach (var thing in group.members)
@@ -238,6 +285,10 @@ namespace TurretGroupControl
 
             for (int i = 0; i < emptyGroups.Count; i++)
             {
+                if (groups.TryGetValue(emptyGroups[i], out var group))
+                {
+                    RemoveIndexEntriesForGroup(group);
+                }
                 groups.Remove(emptyGroups[i]);
             }
         }
@@ -246,12 +297,73 @@ namespace TurretGroupControl
         {
             if (groups == null || groups.Count == 0)
             {
+                groupByTurret?.Clear();
                 return;
             }
 
             foreach (var group in groups.Values)
             {
                 group?.CleanupMembers();
+            }
+
+            RebuildMembershipIndex();
+        }
+
+        private void EnsureMembershipIndex()
+        {
+            if (groupByTurret == null)
+            {
+                RebuildMembershipIndex();
+            }
+        }
+
+        private void RebuildMembershipIndex()
+        {
+            groupByTurret = new Dictionary<Thing, TurretGroupData>();
+            if (groups == null || groups.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var group in groups.Values)
+            {
+                if (group?.members == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < group.members.Count; i++)
+                {
+                    var member = group.members[i];
+                    if (member == null || member.DestroyedOrNull())
+                    {
+                        continue;
+                    }
+
+                    groupByTurret[member] = group;
+                }
+            }
+        }
+
+        private void RemoveIndexEntriesForGroup(TurretGroupData group)
+        {
+            if (group == null || groupByTurret == null)
+            {
+                return;
+            }
+
+            if (group.members == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < group.members.Count; i++)
+            {
+                var member = group.members[i];
+                if (member != null && groupByTurret.TryGetValue(member, out var indexedGroup) && indexedGroup == group)
+                {
+                    groupByTurret.Remove(member);
+                }
             }
         }
 
