@@ -23,7 +23,7 @@ namespace TurretGroupControl
         {
             base.ExposeData();
             Scribe_Values.Look(ref nextGroupId, "nextGroupId", 1);
-            Scribe_Collections.Look(ref groups, "groups", LookMode.Deep, LookMode.Value);
+            Scribe_Collections.Look(ref groups, "groups", LookMode.Value, LookMode.Deep);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
