@@ -28,7 +28,7 @@ namespace TurretGroupControl
 
         public static void Postfix(Thing __instance, ref string __result)
         {
-            if (__instance == null || !__instance.Spawned || __instance.Map == null || __instance.Faction != Faction.OfPlayer || !TurretGroupManager.IsSupportedTurret(__instance))
+            if (__instance == null || !__instance.Spawned || __instance.Map == null || __instance.Faction != Faction.OfPlayer || !TurretGroupUtility.IsSupportedTurret(__instance))
             {
                 return;
             }

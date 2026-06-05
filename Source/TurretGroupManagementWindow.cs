@@ -20,7 +20,7 @@ namespace TurretGroupControl
         private const int AvailableTurretRefreshFrameInterval = 120;
 
         private readonly Map map;
-        private readonly TurretGroupManager manager;
+        private readonly TurretGroupGameComponent manager;
         private int selectedGroupId = -1;
         private int renameBufferGroupId = -1;
         private string renameBuffer = string.Empty;
@@ -208,7 +208,7 @@ namespace TurretGroupControl
 
             if (Widgets.ButtonText(selectRect, "TurretGroupControl_SelectGroup".Translate()))
             {
-                manager.SelectGroup(group);
+                manager.SelectGroup(group, map);
             }
             if (Widgets.ButtonText(holdRect, "TurretGroupControl_GroupHoldFire".Translate()))
             {
@@ -334,7 +334,7 @@ namespace TurretGroupControl
 
             foreach (var thing in map.listerThings.AllThings)
             {
-                if (thing != null && thing.Spawned && thing.Faction == Faction.OfPlayer && TurretGroupManager.IsSupportedTurret(thing))
+                if (thing != null && thing.Spawned && thing.Faction == Faction.OfPlayer && TurretGroupUtility.IsSupportedTurret(thing))
                 {
                     yield return thing;
                 }

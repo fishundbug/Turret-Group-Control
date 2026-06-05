@@ -1,21 +1,17 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using RimWorld;
-using UnityEngine;
 using Verse;
 
 namespace TurretGroupControl
 {
-    public class TurretGroupManager : MapComponent
+    public class TurretGroupGameComponent : GameComponent
     {
         private Dictionary<int, TurretGroupData> groups = new Dictionary<int, TurretGroupData>();
         private Dictionary<Thing, TurretGroupData> groupByTurret = new Dictionary<Thing, TurretGroupData>();
         private int nextGroupId = 1;
-        private static FieldInfo buildingTurretGunHoldFireField;
-        private static bool buildingTurretGunHoldFireFieldResolved;
 
-        public TurretGroupManager(Map map) : base(map)
+        public TurretGroupGameComponent(Game game)
         {
         }
 
@@ -33,7 +29,7 @@ namespace TurretGroupControl
             }
         }
 
-        public override void MapComponentTick()
+        public override void GameComponentTick()
         {
             if (Find.TickManager.TicksGame % 250 != 0)
             {
@@ -119,7 +115,7 @@ namespace TurretGroupControl
 
         public void AddMember(TurretGroupData group, Thing turret)
         {
-            if (group == null || turret == null || !IsSupportedTurret(turret))
+            if (group == null || turret == null || !TurretGroupUtility.IsSupportedTurret(turret))
             {
                 return;
             }
@@ -132,8 +128,8 @@ namespace TurretGroupControl
                 group.members.Add(turret);
             }
             groupByTurret[turret] = group;
-            ApplyHoldFireToTurret(turret, group.holdFire);
-            SetTurretPowerOff(turret, group.powerOff);
+            TurretGroupUtility.SetTurretHoldFire(turret, group.holdFire);
+            TurretGroupUtility.SetTurretPowerOff(turret, group.powerOff);
         }
 
         public void RemoveMember(Thing turret)
@@ -197,7 +193,7 @@ namespace TurretGroupControl
             newName = (newName ?? string.Empty).Trim();
             if (newName.NullOrEmpty())
             {
-                newName = "TurretGroupControl_DefaultGroupName".Translate(group.id).ToString();
+                newName = DefaultGroupName(group.id);
             }
 
             group.name = newName;
@@ -253,7 +249,7 @@ namespace TurretGroupControl
             RebuildMembershipIndex();
             foreach (var thing in group.members)
             {
-                SetTurretPowerOff(thing, group.powerOff);
+                TurretGroupUtility.SetTurretPowerOff(thing, group.powerOff);
             }
         }
 
@@ -268,11 +264,11 @@ namespace TurretGroupControl
             RebuildMembershipIndex();
             foreach (var thing in group.members)
             {
-                ApplyHoldFireToTurret(thing, group.holdFire);
+                TurretGroupUtility.SetTurretHoldFire(thing, group.holdFire);
             }
         }
 
-        public void SelectGroup(TurretGroupData group)
+        public void SelectGroup(TurretGroupData group, Map contextMap = null)
         {
             if (group == null)
             {
@@ -285,7 +281,7 @@ namespace TurretGroupControl
             selector.ClearSelection();
             foreach (var thing in group.members)
             {
-                if (thing != null && thing.Spawned)
+                if (thing != null && thing.Spawned && (contextMap == null || thing.Map == contextMap))
                 {
                     selector.Select(thing);
                 }
@@ -375,12 +371,7 @@ namespace TurretGroupControl
 
         private void RemoveIndexEntriesForGroup(TurretGroupData group)
         {
-            if (group == null || groupByTurret == null)
-            {
-                return;
-            }
-
-            if (group.members == null)
+            if (group == null || groupByTurret == null || group.members == null)
             {
                 return;
             }
@@ -409,70 +400,6 @@ namespace TurretGroupControl
         private static string DefaultGroupName(int number)
         {
             return "TurretGroupControl_DefaultGroupName".Translate(number).ToString();
-        }
-
-        public static bool IsSupportedTurret(Thing thing)
-        {
-            return thing is Building_Turret || thing is Building_TurretGun;
-        }
-
-        public static void SetTurretHoldFire(Thing thing, bool holdFire)
-        {
-            if (thing == null)
-            {
-                return;
-            }
-
-            if (thing is Building_TurretGun)
-            {
-                EnsureTurretGunHoldFireField();
-                if (buildingTurretGunHoldFireField != null)
-                {
-                    buildingTurretGunHoldFireField.SetValue(thing, holdFire);
-                }
-                return;
-            }
-
-            var field = thing.GetType().GetField("holdFire", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            if (field != null && field.FieldType == typeof(bool))
-            {
-                field.SetValue(thing, holdFire);
-            }
-        }
-
-        public static void SetTurretPowerOff(Thing thing, bool powerOff)
-        {
-            if (thing == null)
-            {
-                return;
-            }
-
-            var flickable = thing.TryGetComp<CompFlickable>();
-            if (flickable == null)
-            {
-                return;
-            }
-
-            bool desiredOn = !powerOff;
-            flickable.wantSwitchOn = desiredOn;
-            flickable.SwitchIsOn = desiredOn;
-            FlickUtility.UpdateFlickDesignation(thing);
-        }
-
-        private static void ApplyHoldFireToTurret(Thing thing, bool holdFire)
-        {
-            SetTurretHoldFire(thing, holdFire);
-        }
-
-        private static void EnsureTurretGunHoldFireField()
-        {
-            if (buildingTurretGunHoldFireFieldResolved)
-            {
-                return;
-            }
-
-            buildingTurretGunHoldFireFieldResolved = true;
-            buildingTurretGunHoldFireField = typeof(Building_TurretGun).GetField("holdFire", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
         }
     }
 }

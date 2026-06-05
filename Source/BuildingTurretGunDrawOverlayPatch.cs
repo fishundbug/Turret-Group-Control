@@ -32,7 +32,7 @@ namespace TurretGroupControl
 
         public static void Postfix(Thing __instance)
         {
-            if (__instance == null || !__instance.Spawned || __instance.Map == null || !TurretGroupManager.IsSupportedTurret(__instance))
+            if (__instance == null || !__instance.Spawned || __instance.Map == null || !TurretGroupUtility.IsSupportedTurret(__instance))
             {
                 return;
             }

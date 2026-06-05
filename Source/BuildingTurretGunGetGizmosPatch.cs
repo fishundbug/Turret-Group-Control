@@ -52,7 +52,7 @@ namespace TurretGroupControl
                 yield return gizmo;
             }
 
-            if (turret == null || !turret.Spawned || turret.Faction != Faction.OfPlayer || !TurretGroupManager.IsSupportedTurret(turret))
+            if (turret == null || !turret.Spawned || turret.Faction != Faction.OfPlayer || !TurretGroupUtility.IsSupportedTurret(turret))
             {
                 yield break;
             }
@@ -85,7 +85,7 @@ namespace TurretGroupControl
 
             if (group != null)
             {
-                yield return SelectGroupCommand(manager, group);
+                yield return SelectGroupCommand(manager, group, turret.Map);
                 yield return RemoveFromGroupCommand(manager, turret, group);
                 yield return ToggleGroupHoldFireCommand(manager, group);
                 yield return ToggleGroupPowerCommand(manager, group);
@@ -110,7 +110,7 @@ namespace TurretGroupControl
             };
         }
 
-        private static Command_Action CreateNewGroupCommand(TurretGroupManager manager, List<Thing> selectedTurrets)
+        private static Command_Action CreateNewGroupCommand(TurretGroupGameComponent manager, List<Thing> selectedTurrets)
         {
             return new Command_Action
             {
@@ -125,7 +125,7 @@ namespace TurretGroupControl
             };
         }
 
-        private static Command_Action AddToExistingGroupMenuCommand(TurretGroupManager manager, List<Thing> selectedTurrets)
+        private static Command_Action AddToExistingGroupMenuCommand(TurretGroupGameComponent manager, List<Thing> selectedTurrets)
         {
             return new Command_Action
             {
@@ -157,7 +157,7 @@ namespace TurretGroupControl
             };
         }
 
-        private static Command_Action SelectGroupCommand(TurretGroupManager manager, TurretGroupData group)
+        private static Command_Action SelectGroupCommand(TurretGroupGameComponent manager, TurretGroupData group, Map contextMap)
         {
             return new Command_Action
             {
@@ -166,12 +166,12 @@ namespace TurretGroupControl
                 icon = SelectGroupIcon,
                 action = delegate
                 {
-                    manager.SelectGroup(group);
+                    manager.SelectGroup(group, contextMap);
                 }
             };
         }
 
-        private static Command_Action RemoveFromGroupCommand(TurretGroupManager manager, Thing turret, TurretGroupData group)
+        private static Command_Action RemoveFromGroupCommand(TurretGroupGameComponent manager, Thing turret, TurretGroupData group)
         {
             return new Command_Action
             {
@@ -186,7 +186,7 @@ namespace TurretGroupControl
             };
         }
 
-        private static Command_Toggle ToggleGroupHoldFireCommand(TurretGroupManager manager, TurretGroupData group)
+        private static Command_Toggle ToggleGroupHoldFireCommand(TurretGroupGameComponent manager, TurretGroupData group)
         {
             return new Command_Toggle
             {
@@ -203,7 +203,7 @@ namespace TurretGroupControl
             };
         }
 
-        private static Command_Toggle ToggleGroupPowerCommand(TurretGroupManager manager, TurretGroupData group)
+        private static Command_Toggle ToggleGroupPowerCommand(TurretGroupGameComponent manager, TurretGroupData group)
         {
             return new Command_Toggle
             {
