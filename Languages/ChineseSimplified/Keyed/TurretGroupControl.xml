@@ -31,6 +31,11 @@
   <TurretGroupControl_GroupFireAtWill>组内自由开火</TurretGroupControl_GroupFireAtWill>
   <TurretGroupControl_GroupFireAtWillDesc>允许 {0} 中的所有炮塔自由开火。</TurretGroupControl_GroupFireAtWillDesc>
 
+  <TurretGroupControl_GroupPowerOff>整组断电</TurretGroupControl_GroupPowerOff>
+  <TurretGroupControl_GroupPowerOn>整组接电</TurretGroupControl_GroupPowerOn>
+  <TurretGroupControl_GroupPowerOffDesc>立即将 {0} 中所有支持开关的炮塔断电，不需要小人操作。</TurretGroupControl_GroupPowerOffDesc>
+  <TurretGroupControl_GroupPowerOnDesc>立即将 {0} 中所有支持开关的炮塔重新接电，不需要小人操作。</TurretGroupControl_GroupPowerOnDesc>
+
   <!-- 管理窗口 -->
   <TurretGroupControl_ManagementTitle>炮塔组管理</TurretGroupControl_ManagementTitle>
   <TurretGroupControl_GroupList>炮塔组列表</TurretGroupControl_GroupList>
@@ -65,6 +70,8 @@
   <TurretGroupControl_RemovedFromGroup>已将炮塔从 {0} 中移除。</TurretGroupControl_RemovedFromGroup>
   <TurretGroupControl_GroupHoldFireSet>{0}：停火。</TurretGroupControl_GroupHoldFireSet>
   <TurretGroupControl_GroupFireAtWillSet>{0}：自由开火。</TurretGroupControl_GroupFireAtWillSet>
+  <TurretGroupControl_GroupPowerOffSet>{0}：已断电。</TurretGroupControl_GroupPowerOffSet>
+  <TurretGroupControl_GroupPowerOnSet>{0}：已接电。</TurretGroupControl_GroupPowerOnSet>
   <TurretGroupControl_RenamedGroup>已重命名为 {0}。</TurretGroupControl_RenamedGroup>
   <TurretGroupControl_DeletedGroup>已删除 {0}。</TurretGroupControl_DeletedGroup>
   <TurretGroupControl_AddedTurretToGroup>已将炮塔加入 {0}。</TurretGroupControl_AddedTurretToGroup>

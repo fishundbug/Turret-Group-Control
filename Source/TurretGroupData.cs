@@ -10,12 +10,14 @@ namespace TurretGroupControl
         public string name;
         public List<Thing> members = new List<Thing>();
         public bool holdFire;
+        public bool powerOff;
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref id, "id", 0);
             Scribe_Values.Look(ref name, "name", string.Empty);
             Scribe_Values.Look(ref holdFire, "holdFire", false);
+            Scribe_Values.Look(ref powerOff, "powerOff", false);
             Scribe_Collections.Look(ref members, "members", LookMode.Reference);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)

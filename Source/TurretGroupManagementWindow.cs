@@ -161,9 +161,9 @@ namespace TurretGroupControl
                 return;
             }
 
-            DrawSelectedGroupActions(new Rect(rect.x, rect.y, rect.width, 118f), group);
+            DrawSelectedGroupActions(new Rect(rect.x, rect.y, rect.width, 154f), group);
 
-            float listTop = rect.y + 128f;
+            float listTop = rect.y + 164f;
             float listHeight = (rect.yMax - listTop - Gap) / 2f;
             DrawMemberList(new Rect(rect.x, listTop, rect.width, listHeight), group);
             DrawAvailableTurretList(new Rect(rect.x, listTop + listHeight + Gap, rect.width, listHeight), group);
@@ -197,11 +197,14 @@ namespace TurretGroupControl
                 }
             }
 
-            float buttonY = nameRect.yMax + Gap;
-            var selectRect = new Rect(rect.x, buttonY, ButtonWidth, 32f);
-            var holdRect = new Rect(selectRect.xMax + Gap, buttonY, ButtonWidth, 32f);
-            var fireRect = new Rect(holdRect.xMax + Gap, buttonY, ButtonWidth, 32f);
-            var deleteRect = new Rect(rect.xMax - ButtonWidth, buttonY, ButtonWidth, 32f);
+            float firstButtonY = nameRect.yMax + Gap;
+            var selectRect = new Rect(rect.x, firstButtonY, ButtonWidth, 32f);
+            var holdRect = new Rect(selectRect.xMax + Gap, firstButtonY, ButtonWidth, 32f);
+            var fireRect = new Rect(holdRect.xMax + Gap, firstButtonY, ButtonWidth, 32f);
+
+            float secondButtonY = firstButtonY + 32f + Gap;
+            var powerRect = new Rect(rect.x, secondButtonY, ButtonWidth, 32f);
+            var deleteRect = new Rect(rect.xMax - ButtonWidth, secondButtonY, ButtonWidth, 32f);
 
             if (Widgets.ButtonText(selectRect, "TurretGroupControl_SelectGroup".Translate()))
             {
@@ -218,6 +221,13 @@ namespace TurretGroupControl
                 manager.ToggleHoldFire(group.id, false);
                 groupCacheDirty = true;
                 Messages.Message("TurretGroupControl_GroupFireAtWillSet".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
+            }
+            if (Widgets.ButtonText(powerRect, group.powerOff ? "TurretGroupControl_GroupPowerOn".Translate() : "TurretGroupControl_GroupPowerOff".Translate()))
+            {
+                bool newPowerOff = !group.powerOff;
+                manager.TogglePowerOff(group.id, newPowerOff);
+                groupCacheDirty = true;
+                Messages.Message(newPowerOff ? "TurretGroupControl_GroupPowerOffSet".Translate(group.name) : "TurretGroupControl_GroupPowerOnSet".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
             }
             if (Widgets.ButtonText(deleteRect, "TurretGroupControl_DeleteGroup".Translate()))
             {

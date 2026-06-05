@@ -88,6 +88,7 @@ namespace TurretGroupControl
                 yield return SelectGroupCommand(manager, group);
                 yield return RemoveFromGroupCommand(manager, turret, group);
                 yield return ToggleGroupHoldFireCommand(manager, group);
+                yield return ToggleGroupPowerCommand(manager, group);
             }
             else if (manager.AllGroups().Any())
             {
@@ -199,6 +200,23 @@ namespace TurretGroupControl
                     Messages.Message(newHoldFire ? "TurretGroupControl_GroupHoldFireSet".Translate(group.name) : "TurretGroupControl_GroupFireAtWillSet".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
                 },
                 isActive = () => group.holdFire
+            };
+        }
+
+        private static Command_Toggle ToggleGroupPowerCommand(TurretGroupManager manager, TurretGroupData group)
+        {
+            return new Command_Toggle
+            {
+                defaultLabel = group.powerOff ? "TurretGroupControl_GroupPowerOn".Translate() : "TurretGroupControl_GroupPowerOff".Translate(),
+                defaultDesc = group.powerOff ? "TurretGroupControl_GroupPowerOnDesc".Translate(group.name) : "TurretGroupControl_GroupPowerOffDesc".Translate(group.name),
+                icon = TexCommand.DesirePower,
+                toggleAction = delegate
+                {
+                    bool newPowerOff = !group.powerOff;
+                    manager.TogglePowerOff(group.id, newPowerOff);
+                    Messages.Message(newPowerOff ? "TurretGroupControl_GroupPowerOffSet".Translate(group.name) : "TurretGroupControl_GroupPowerOnSet".Translate(group.name), MessageTypeDefOf.TaskCompletion, false);
+                },
+                isActive = () => group.powerOff
             };
         }
         private class TurretGroupManagementCommand : Command_Action

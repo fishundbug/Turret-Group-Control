@@ -57,7 +57,8 @@ namespace TurretGroupControl
                 id = id,
                 name = DefaultGroupName(defaultNameNumber),
                 members = new List<Thing>(),
-                holdFire = false
+                holdFire = false,
+                powerOff = false
             };
 
             groups[group.id] = group;
@@ -132,6 +133,7 @@ namespace TurretGroupControl
             }
             groupByTurret[turret] = group;
             ApplyHoldFireToTurret(turret, group.holdFire);
+            SetTurretPowerOff(turret, group.powerOff);
         }
 
         public void RemoveMember(Thing turret)
@@ -227,6 +229,32 @@ namespace TurretGroupControl
 
             group.holdFire = holdFire;
             ApplyHoldFire(group);
+        }
+
+        public void TogglePowerOff(int groupId, bool powerOff)
+        {
+            if (!groups.TryGetValue(groupId, out var group))
+            {
+                return;
+            }
+
+            group.powerOff = powerOff;
+            ApplyPowerState(group);
+        }
+
+        public void ApplyPowerState(TurretGroupData group)
+        {
+            if (group == null)
+            {
+                return;
+            }
+
+            group.CleanupMembers();
+            RebuildMembershipIndex();
+            foreach (var thing in group.members)
+            {
+                SetTurretPowerOff(thing, group.powerOff);
+            }
         }
 
         public void ApplyHoldFire(TurretGroupData group)
@@ -410,6 +438,25 @@ namespace TurretGroupControl
             {
                 field.SetValue(thing, holdFire);
             }
+        }
+
+        public static void SetTurretPowerOff(Thing thing, bool powerOff)
+        {
+            if (thing == null)
+            {
+                return;
+            }
+
+            var flickable = thing.TryGetComp<CompFlickable>();
+            if (flickable == null)
+            {
+                return;
+            }
+
+            bool desiredOn = !powerOff;
+            flickable.wantSwitchOn = desiredOn;
+            flickable.SwitchIsOn = desiredOn;
+            FlickUtility.UpdateFlickDesignation(thing);
         }
 
         private static void ApplyHoldFireToTurret(Thing thing, bool holdFire)
